@@ -152,14 +152,29 @@ Theorem loaded_inv_step : forall D (s : state D) e,
   loaded_inv s -> loaded_inv (step s e).
 Proof.
   unfold loaded_inv; intros D s e Hinv.
-  destruct e as [| rid d | rid | rid |]; simpl;
-    destruct (phase s); simpl;
-    try (intro; congruence);
-    try (destruct (Nat.eqb _ _); simpl; try (intro; congruence));
-    try (destruct (Nat.ltb _ _); simpl; try (intro; congruence));
-    try exact Hinv.
-  (* GotResponse with matching rid: cache = Some d *)
-  intro. exists d. reflexivity.
+  destruct e as [| rid d | rid | rid |]; simpl.
+  - (* Fetch *)
+    destruct (phase s) as [| crid | |] eqn:Hp; simpl; intro; congruence.
+  - (* GotResponse *)
+    destruct (phase s) as [| crid | |] eqn:Hp; simpl; try (intro; congruence).
+    + (* Loading crid *)
+      destruct (Nat.eqb rid crid); simpl.
+      * intro. exists d. reflexivity.
+      * intro; congruence.
+    + (* Loaded — invariant carries over *)
+      intro; apply Hinv; reflexivity.
+  - (* GotError *)
+    destruct (phase s) as [| crid | |] eqn:Hp; simpl; try (intro; congruence).
+    + destruct (Nat.eqb rid crid); simpl; intro; congruence.
+    + intro; apply Hinv; reflexivity.
+  - (* TimedOut *)
+    destruct (phase s) as [| crid | |] eqn:Hp; simpl; try (intro; congruence).
+    + destruct (Nat.eqb rid crid); simpl; intro; congruence.
+    + intro; apply Hinv; reflexivity.
+  - (* DoRetry *)
+    destruct (phase s) as [| crid | |] eqn:Hp; simpl; try (intro; congruence).
+    + intro; apply Hinv; reflexivity.
+    + destruct (Nat.ltb (retries s) (max_retries s)); simpl; intro; congruence.
 Qed.
 
 (* ================================================================= *)

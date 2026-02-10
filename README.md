@@ -9,13 +9,12 @@ Rocqducers bridges the [Rocq proof assistant](https://rocq-prover.org/) (formerl
 ```
   Rocq            Extraction         Melange           Vite
 ┌───────────┐    ┌──────────────┐    ┌───────────┐    ┌──────────┐
-│ PickList.v│───▶│  PickList.ml │───▶│PickList.js│───▶│  React   │
-│  proofs   │    │  (OCaml)     │    │  (ES6)    │    │  App     │
+│ theories/ │───▶│  OCaml       │───▶│  ES6 JS   │───▶│  React   │
+│  proofs   │    │  extraction  │    │  modules  │    │  App     │
 └───────────┘    └──────────────┘    └───────────┘    └──────────┘
     ▲                                      │
-    │  Invariants proved:                  │  useReducer(reducer, ...)
-    │  • picked list always non-empty      │
-    │  • total item count is constant      │
+    │  Invariants proved once,             │  useReducer(reducer, ...)
+    │  enforced forever                    │
     └──────────────────────────────────────┘
 ```
 
@@ -27,6 +26,53 @@ Rocqducers bridges the [Rocq proof assistant](https://rocq-prover.org/) (formerl
 
 4. **Vite + React** — The generated JS is imported like any other module. React's `useReducer` hook accepts the verified reducer directly — the proof-carrying state machine drives the UI.
 
+## Components
+
+### 1. SafePickList — Verified selection list
+
+A pick/unpick list where items move between "picked" and "suggestions". The reducer is defined in `PickList.v` and used via `useReducer`.
+
+**State:** `{ picked : list A; suggestions : list A }`
+**Events:** `DoPick i` | `DoUnpick i`
+
+**Proved invariants:**
+
+| Property | Statement |
+|----------|-----------|
+| Non-empty picked | `picked s <> [] -> picked (reducer s e) <> []` |
+| Total preserved | `|picked s| + |suggestions s| = |picked (reducer s e)| + |suggestions (reducer s e)|` |
+
+### 2. SafeLoader — Verified network loader with cache, retry, and timeout
+
+A network data loader that handles loading, errors, retries, timeouts, and race conditions. The pure reducer is defined in `Loader.v`; side effects (fetch, timers) are handled by the React component.
+
+**State:** `{ phase; cache; next_id; retries; max_retries }`
+**Events:** `Fetch` | `GotResponse rid data` | `GotError rid` | `TimedOut rid` | `DoRetry`
+
+```
+     Fetch          GotResponse         Fetch
+Idle ────── Loading ──────────── Loaded ─────── Loading
+               │                                   │
+               │ GotError / TimedOut                │
+               ▼                                   ▼
+           Errored ──────────────── Loading    Errored
+               │      DoRetry                      │
+               │   (retries < max)                 │
+               └── stays Errored ──────────────────┘
+                   (retries >= max)
+```
+
+**Proved invariants:**
+
+| Property | Statement | Addresses |
+|----------|-----------|-----------|
+| Loaded implies data | `phase (step s e) = Loaded -> exists d, cache (step s e) = Some d` | — |
+| Error preserves cache | `phase (step s e) = Errored -> cache (step s e) = cache s` | Inconsistent cache |
+| Stale events ignored | `phase s = Loading crid -> rid <> crid -> step s (GotResponse rid d) = s` | Race conditions |
+| Retry preserves cache | `cache (step s DoRetry) = cache s` | Cache invalidation |
+| Bounded retries | `retries s >= max_retries s -> step s DoRetry = s` | Infinite retry |
+| Timeout resolves loading | `phase s = Loading rid -> phase (step s (TimedOut rid)) = Errored` | Stuck spinner |
+
 ## Project structure
 
 ```
@@ -34,13 +80,15 @@ rocqducers/
 ├── src/                          # React frontend
 │   ├── main.jsx                  #   Entry point
 │   ├── App.jsx                   #   Application shell
-│   └── SafePickList.jsx          #   Component using the verified reducer
+│   ├── SafePickList.jsx          #   Verified pick list component
+│   └── SafeLoader.jsx            #   Verified network loader component
 ├── vite.config.js                # Vite config with Melange aliases
 ├── package.json                  # JS dependencies and scripts
 └── rocqducers/                   # Dune project (Rocq + Melange)
     ├── dune-project
     ├── theories/
-    │   ├── PickList.v            #   State, events, reducer, proofs
+    │   ├── PickList.v            #   Pick list: state, events, reducer, proofs
+    │   ├── Loader.v              #   Network loader: state, events, step, proofs
     │   └── dune
     ├── extraction/
     │   ├── Extract.v             #   Extraction directives

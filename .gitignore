@@ -1,0 +1,21 @@
+# Node
+node_modules/
+
+# Vite
+dist/
+
+# Dune / OCaml / Melange
+rocqducers/_build/
+
+# Rocq
+*.vo
+*.vok
+*.vos
+*.glob
+*.aux
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/

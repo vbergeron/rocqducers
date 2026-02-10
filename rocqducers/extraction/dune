@@ -1,0 +1,10 @@
+(rocq.extraction
+ (prelude Extract)
+ (extracted_modules PickList Loader)
+ (theories Stdlib Rocqducers))
+
+(library
+ (name extracted)
+ (modes melange)
+ (flags (:standard -w -33))
+ (modules PickList Loader))

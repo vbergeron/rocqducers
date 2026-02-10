@@ -1,0 +1,4 @@
+(library
+ (name rocqducers_lib)
+ (modes melange)
+ (libraries extracted))

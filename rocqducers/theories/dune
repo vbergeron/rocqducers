@@ -1,0 +1,4 @@
+(rocq.theory
+ (name Rocqducers)
+ (modules PickList Loader)
+ (theories Stdlib))

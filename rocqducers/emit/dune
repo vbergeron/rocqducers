@@ -1,0 +1,5 @@
+(melange.emit
+ (target output)
+ (alias melange)
+ (libraries rocqducers_lib)
+ (module_systems es6))

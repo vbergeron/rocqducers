@@ -40,7 +40,7 @@ A pick/unpick list where items move between "picked" and "suggestions". The redu
 | Property | Statement |
 |----------|-----------|
 | Non-empty picked | `picked s <> [] -> picked (reducer s e) <> []` |
-| Total preserved | `|picked s| + |suggestions s| = |picked (reducer s e)| + |suggestions (reducer s e)|` |
+| Total preserved | `card(picked s) + card(suggestions s) = card( picked (reducer s e)) + card(suggestions reducer s e))` |
 
 ### 2. SafeLoader — Verified network loader with cache, retry, and timeout
 

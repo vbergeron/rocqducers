@@ -19,3 +19,4 @@ rocqducers/_build/
 
 # Editor
 .vscode/
+.lia.cache

@@ -1,4 +1,4 @@
 (rocq.theory
  (name Rocqducers)
- (modules PickList Loader)
+ (modules PickList Loader AsyncButton)
  (theories Stdlib))

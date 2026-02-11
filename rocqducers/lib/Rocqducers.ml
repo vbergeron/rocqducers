@@ -35,3 +35,15 @@ module Loader = struct
   let is_loaded = Extracted.Loader.is_loaded
   let is_errored = Extracted.Loader.is_errored
 end
+
+module AsyncButton = struct
+
+  let idle = Extracted.AsyncButton.Idle
+  let loading = Extracted.AsyncButton.Loading
+
+  let click = Extracted.AsyncButton.Click
+  let success = Extracted.AsyncButton.Success
+  let failure = Extracted.AsyncButton.Failure
+
+  let reducer = Extracted.AsyncButton.reducer
+end

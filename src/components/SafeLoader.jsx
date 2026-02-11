@@ -1,5 +1,5 @@
-import { useReducer, useEffect, useRef, useState } from "react";
-import { Loader } from "@rocqducers/lib/Rocqducers.js";
+import { useState } from "react";
+import useSafeLoader from "../hooks/useSafeLoader";
 import LoaderView from "./LoaderView";
 
 const MAX_RETRIES = 3;
@@ -22,38 +22,21 @@ function simulatedFetch({ delay, shouldFail }) {
 }
 
 export default function SafeLoader() {
-  const [state, dispatch] = useReducer(Loader.step, Loader.init(MAX_RETRIES));
   const [delay, setDelay] = useState(1000);
   const [shouldFail, setShouldFail] = useState(false);
-  const settingsRef = useRef({ delay: 1000, shouldFail: false });
-  settingsRef.current = { delay, shouldFail };
 
-  const ph = Loader.phase(state);
-  const cached = Loader.cache(state);
-  const isLoading = Loader.is_loading(ph);
-  const loadingRid = Loader.loading_rid(ph);
-  const retryCount = Loader.retries(state);
+  const {
+    cached, retryCount, maxRetries, nextId,
+    isIdle, isLoading, isLoaded, isErrored,
+    fetch: doFetch, retry,
+  } = useSafeLoader(
+    () => simulatedFetch({ delay, shouldFail }),
+    { maxRetries: MAX_RETRIES, timeoutMs: TIMEOUT_MS },
+  );
 
-  // Side-effects: start fetch + timeout when phase becomes Loading
-  useEffect(() => {
-    if (!isLoading || loadingRid === undefined) return;
-    const rid = loadingRid;
-    let cancelled = false;
-
-    const timer = setTimeout(() => {
-      if (!cancelled) dispatch(Loader.timed_out(rid));
-    }, TIMEOUT_MS);
-
-    simulatedFetch(settingsRef.current)
-      .then(data => { if (!cancelled) dispatch(Loader.got_response(rid, data)); })
-      .catch(() => { if (!cancelled) dispatch(Loader.got_error(rid)); });
-
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [isLoading, loadingRid]);
-
-  const phaseLabel = Loader.is_idle(ph) ? "Idle"
+  const phaseLabel = isIdle ? "Idle"
     : isLoading ? "Loading"
-    : Loader.is_loaded(ph) ? "Loaded"
+    : isLoaded ? "Loaded"
     : "Errored";
 
   const phaseColor = { Idle: "#6b7280", Loading: "#2563eb", Loaded: "#16a34a", Errored: "#dc2626" };
@@ -61,12 +44,12 @@ export default function SafeLoader() {
   return (
     <LoaderView
       phaseLabel={phaseLabel} phaseColor={phaseColor[phaseLabel]}
-      nextId={Loader.next_id(state)} cached={cached}
-      retryCount={retryCount} maxRetries={MAX_RETRIES}
-      isLoading={isLoading} isIdle={Loader.is_idle(ph)}
-      isLoaded={Loader.is_loaded(ph)} isErrored={Loader.is_errored(ph)}
-      onFetch={() => dispatch(Loader.$$fetch)}
-      onRetry={() => dispatch(Loader.do_retry)}
+      nextId={nextId} cached={cached}
+      retryCount={retryCount} maxRetries={maxRetries}
+      isLoading={isLoading} isIdle={isIdle}
+      isLoaded={isLoaded} isErrored={isErrored}
+      onFetch={doFetch}
+      onRetry={retry}
       delay={delay} onDelayChange={setDelay}
       shouldFail={shouldFail} onShouldFailChange={setShouldFail}
     />

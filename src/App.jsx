@@ -1,5 +1,6 @@
 import SafePickList from "./components/SafePickList";
 import SafeLoader from "./components/SafeLoader";
+import SafeAsyncButton from "./components/SafeAsyncButton";
 import styles from "./App.module.css";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"];
@@ -26,6 +27,14 @@ export default function App() {
           Invariants: loaded implies data present, error preserves cache, stale responses ignored, retry bounded.
         </p>
         <SafeLoader />
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Async button</h3>
+        <p className={styles.cardDescription}>
+          Invariants: clicks are ignored while loading, success and failure always return to idle.
+        </p>
+        <SafeAsyncButton />
       </div>
     </div>
   );

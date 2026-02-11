@@ -2,6 +2,7 @@ From Stdlib Require Extraction.
 From Stdlib Require Import PeanoNat.
 From Rocqducers Require Import PickList.
 From Rocqducers Require Loader.
+From Rocqducers Require AsyncButton.
 
 Extraction Language OCaml.
 
@@ -23,4 +24,5 @@ Separate Extraction
   Loader.mk_timed_out Loader.mk_do_retry
   Loader.phase Loader.cache Loader.next_id Loader.retries
   Loader.is_idle Loader.is_loading Loader.loading_rid
-  Loader.is_loaded Loader.is_errored.
+  Loader.is_loaded Loader.is_errored
+  AsyncButton.reducer.

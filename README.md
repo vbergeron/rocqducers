@@ -119,20 +119,17 @@ rocqducers/
 ## Setup
 
 ```bash
-# 1. Create and configure the opam switch
-opam switch create rocqducers ocaml-base-compiler.5.2.1
+# 1. Create opam switch and install OCaml/Rocq dependencies
+npm run setup
 eval $(opam env)
 
-# 2. Install OCaml/Rocq dependencies
-opam install dune melange rocq-core rocq-stdlib
-
-# 3. Install JS dependencies
+# 2. Install JS dependencies
 npm install
 
-# 4. Build the Rocq proofs, extract, and compile to JS
+# 3. Build the Rocq proofs, extract, and compile to JS
 npm run dune
 
-# 5. Start the dev server
+# 4. Start the dev server
 npm run dev
 ```
 
@@ -140,10 +137,12 @@ npm run dev
 
 | Command | Description |
 |---------|-------------|
+| `npm run setup` | Create opam switch (OCaml 5.2.1) and install dune, melange, rocq-core, rocq-stdlib |
 | `npm run dune` | Build Rocq theories, extract OCaml, compile to JS via Melange |
 | `npm run dev` | Build + start Vite dev server |
 | `npm run build` | Build + production Vite bundle |
 | `npm run preview` | Preview the production build |
+| `npm run clean` | Remove dune (`rocqducers/_build`) and Vite (`dist`) build artifacts |
 
 ## License
 

@@ -5,7 +5,9 @@
     "dune": "dune build @melange --root rocqducers",
     "dev": "npm run dune && vite",
     "build": "npm run dune && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "bash scripts/setup.sh",
+    "clean": "rm -rf rocqducers/_build dist"
   },
   "dependencies": {
     "react": "^18.2.0",

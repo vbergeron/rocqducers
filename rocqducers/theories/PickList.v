@@ -3,12 +3,12 @@ Import ListNotations.
 
 (** * 1. Datastructures and arguments *)
 
-Record state (A : Type) := mkState {
+Record state (A : Type) := new_state {
   picked : list A;
   suggestions : list A;
 }.
 
-Arguments mkState {A}.
+Arguments new_state {A}.
 Arguments picked {A}.
 Arguments suggestions {A}.
 
@@ -32,13 +32,10 @@ Fixpoint remove_at {A : Type} (i : nat) (l : list A) : list A :=
   | h :: t, S i' => h :: remove_at i' t
   end.
 
-Definition mk_do_pick (i : nat) : event := DoPick i.
-Definition mk_do_unpick (i : nat) : event := DoUnpick i.
-
 Definition do_pick {A} (s : state A) (i : nat) : state A :=
   match nth (suggestions s) i with
   | None => s
-  | Some x => mkState (x :: picked s) (remove_at i (suggestions s))
+  | Some x => new_state (x :: picked s) (remove_at i (suggestions s))
   end.
 
 Definition do_unpick {A} (s : state A) (i : nat) : state A :=
@@ -48,18 +45,18 @@ Definition do_unpick {A} (s : state A) (i : nat) : state A :=
   | _ =>
     match nth (picked s) i with
     | None => s
-    | Some x => mkState (remove_at i (picked s)) (x :: suggestions s)
+    | Some x => new_state (remove_at i (picked s)) (x :: suggestions s)
     end
   end.
 
-Definition reducer {A} (s : state A) (e : event) : state A :=
+Definition reduce {A} (s : state A) (e : event) : state A :=
   match e with
   | DoPick i => do_pick s i
   | DoUnpick i => do_unpick s i
   end.
 
-Definition init_state {A} (default : A) (rest : list A) : state A :=
-  mkState [default] rest.
+Definition init {A} (default : A) (rest : list A) : state A :=
+  new_state [default] rest.
 
 (** * 3. Lemmas *)
 
@@ -189,7 +186,7 @@ Qed.
     which is non-empty. *)
 
 Lemma init_picked_nonempty : forall A (d : A) rest,
-  picked (init_state d rest) <> [].
+  picked (init d rest) <> [].
 Proof.
   intros. simpl. discriminate.
 Qed.
@@ -202,7 +199,7 @@ Qed.
     [do_unpick] refuses to act when only one element remains. *)
 
 Theorem picked_nonempty : forall A (s : state A) e,
-  picked s <> [] -> picked (reducer s e) <> [].
+  picked s <> [] -> picked (reduce s e) <> [].
 Proof.
   intros A s e Hne.
   destruct e; simpl.
@@ -216,7 +213,7 @@ Qed.
     Out-of-bounds indices leave the state unchanged. *)
 
 Theorem total_preserved : forall A (s : state A) e,
-  length (picked (reducer s e)) + length (suggestions (reducer s e)) =
+  length (picked (reduce s e)) + length (suggestions (reduce s e)) =
   length (picked s) + length (suggestions s).
 Proof.
   intros A s e.
@@ -231,14 +228,14 @@ Qed.
     [picked_nonempty]. *)
 
 Theorem picked_always_nonempty : forall A (d : A) rest events,
-  picked (fold_left reducer events (init_state d rest)) <> [].
+  picked (fold_left reduce events (init d rest)) <> [].
 Proof.
   intros A d rest events.
   (* Generalize: any state with non-empty picked stays non-empty *)
-  cut (picked (init_state d rest) <> [] ->
-       picked (fold_left reducer events (init_state d rest)) <> []).
+  cut (picked (init d rest) <> [] ->
+       picked (fold_left reduce events (init d rest)) <> []).
   { intro H. apply H. apply init_picked_nonempty. }
-  generalize (init_state d rest) as s.
+  generalize (init d rest) as s.
   induction events as [| e es IH]; intros s Hne; simpl.
   - (* Base: no events, picked unchanged *) exact Hne.
   - (* Step: apply IH to the next state *)
@@ -249,16 +246,16 @@ Qed.
     [init_state], the total count equals [1 + length rest]. *)
 
 Theorem total_always_preserved : forall A (d : A) rest events,
-  let s := fold_left reducer events (init_state d rest) in
+  let s := fold_left reduce events (init d rest) in
   length (picked s) + length (suggestions s) = 1 + length rest.
 Proof.
   intros A d rest events. simpl.
   (* Generalize: total count is preserved from any starting state *)
-  cut (length (picked (init_state d rest)) + length (suggestions (init_state d rest)) = 1 + length rest ->
-       length (picked (fold_left reducer events (init_state d rest))) +
-       length (suggestions (fold_left reducer events (init_state d rest))) = 1 + length rest).
+  cut (length (picked (init d rest)) + length (suggestions (init d rest)) = 1 + length rest ->
+       length (picked (fold_left reduce events (init d rest))) +
+       length (suggestions (fold_left reduce events (init d rest))) = 1 + length rest).
   { intro H. apply H. reflexivity. }
-  generalize (init_state d rest) as s.
+  generalize (init d rest) as s.
   induction events as [| e es IH]; intros s Hs; simpl.
   - (* Base: no events *) exact Hs.
   - (* Step: rewrite with total_preserved *)

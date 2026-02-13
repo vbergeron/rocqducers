@@ -18,7 +18,12 @@ Extract Inlined Constant Nat.eqb => "(=)".
 Extract Inlined Constant Nat.ltb => "(<)".
 
 Separate Extraction
-  reducer init_state mk_do_pick mk_do_unpick picked suggestions
+  PickList.reduce 
+  PickList.init 
+  PickList.do_pick 
+  PickList.do_unpick 
+  PickList.picked 
+  PickList.suggestions
   Loader.step Loader.init_state
   Loader.mk_fetch Loader.mk_got_response Loader.mk_got_error
   Loader.mk_timed_out Loader.mk_do_retry

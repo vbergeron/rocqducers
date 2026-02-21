@@ -36,6 +36,40 @@ module Loader = struct
   let is_errored = Extracted.Loader.is_errored
 end
 
+module UndoTree = struct
+
+  let step        = Extracted.UndoTree.step
+  let root_cursor = Extracted.UndoTree.root_cursor
+
+  (* Tree constructors *)
+  let leaf a   = Extracted.UndoTree.Leaf a
+  let link a t = Extracted.UndoTree.Link (a, t)
+  let node l r = Extracted.UndoTree.Node (l, r)
+
+  (* Event values *)
+  let ev_go_left  = Extracted.UndoTree.EvGoLeft
+  let ev_go_right = Extracted.UndoTree.EvGoRight
+  let ev_go_link  = Extracted.UndoTree.EvGoLink
+  let ev_go_up    = Extracted.UndoTree.EvGoUp
+
+  (* Cursor inspection (bool / int, safe from JS) *)
+  let is_failed    = Extracted.UndoTree.is_failed
+  let can_go_left  = Extracted.UndoTree.can_go_left
+  let can_go_right = Extracted.UndoTree.can_go_right
+  let can_go_link  = Extracted.UndoTree.can_go_link
+  let can_go_up    = Extracted.UndoTree.can_go_up
+  let focus_kind   = Extracted.UndoTree.focus_kind   (* 0=Leaf 1=Link 2=Node 3=Failed *)
+  let cursor_depth = Extracted.UndoTree.cursor_depth
+
+  (* String-specific label for the focused node (for demo display) *)
+  let focus_label c =
+    match c with
+    | Extracted.UndoTree.At (Extracted.UndoTree.Leaf s, _)      -> s
+    | Extracted.UndoTree.At (Extracted.UndoTree.Link (s, _), _) -> s
+    | _                                                          -> ""
+
+end
+
 module AsyncButton = struct
 
   let idle = Extracted.AsyncButton.Idle

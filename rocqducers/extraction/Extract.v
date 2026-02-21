@@ -3,6 +3,7 @@ From Stdlib Require Import PeanoNat.
 From Rocqducers Require Import PickList.
 From Rocqducers Require Loader.
 From Rocqducers Require AsyncButton.
+From Rocqducers Require UndoTree.
 
 Extraction Language OCaml.
 
@@ -30,4 +31,14 @@ Separate Extraction
   Loader.phase Loader.cache Loader.next_id Loader.retries
   Loader.is_idle Loader.is_loading Loader.loading_rid
   Loader.is_loaded Loader.is_errored
-  AsyncButton.reducer.
+  AsyncButton.reducer
+  UndoTree.step
+  UndoTree.root_cursor
+  UndoTree.reconstruct
+  UndoTree.is_failed
+  UndoTree.can_go_left
+  UndoTree.can_go_right
+  UndoTree.can_go_link
+  UndoTree.can_go_up
+  UndoTree.focus_kind
+  UndoTree.cursor_depth.

@@ -1,10 +1,10 @@
 (rocq.extraction
  (prelude Extract)
- (extracted_modules PickList Loader AsyncButton Datatypes)
+ (extracted_modules PickList Loader AsyncButton UndoTree Datatypes)
  (theories Stdlib Rocqducers))
 
 (library
  (name extracted)
  (modes melange)
  (flags (:standard -w -33))
- (modules PickList Loader AsyncButton Datatypes))
+ (modules PickList Loader AsyncButton UndoTree Datatypes))

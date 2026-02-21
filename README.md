@@ -28,7 +28,11 @@ Rocqducers bridges the [Rocq proof assistant](https://rocq-prover.org/) (formerl
 
 ## Components
 
+> Detailed documentation for each component lives in [`docs/`](./docs/).
+
 ### 1. SafePickList — Verified selection list
+
+→ [`docs/pick-list.md`](./docs/pick-list.md)
 
 A pick/unpick list where items move between "picked" and "suggestions". The reducer is defined in `PickList.v` and used via `useReducer`.
 
@@ -40,9 +44,11 @@ A pick/unpick list where items move between "picked" and "suggestions". The redu
 | Property | Statement |
 |----------|-----------|
 | Non-empty picked | `picked s <> [] -> picked (reducer s e) <> []` |
-| Total preserved | `card(picked s) + card(suggestions s) = card( picked (reducer s e)) + card(suggestions reducer s e))` |
+| Total preserved | `card(picked s) + card(suggestions s) = card(picked (reducer s e)) + card(suggestions (reducer s e))` |
 
 ### 2. SafeLoader — Verified network loader with cache, retry, and timeout
+
+→ [`docs/loader.md`](./docs/loader.md)
 
 A network data loader that handles loading, errors, retries, timeouts, and race conditions. The pure reducer is defined in `Loader.v`; side effects (fetch, timers) are handled by the React component.
 
@@ -53,7 +59,7 @@ A network data loader that handles loading, errors, retries, timeouts, and race 
      Fetch          GotResponse         Fetch
 Idle ────── Loading ──────────── Loaded ─────── Loading
                │                                   │
-               │ GotError / TimedOut                │
+               │ GotError / TimedOut               │
                ▼                                   ▼
            Errored ──────────────── Loading    Errored
                │      DoRetry                      │
@@ -73,15 +79,53 @@ Idle ────── Loading ──────────── Loaded ─�
 | Bounded retries | `retries s >= max_retries s -> step s DoRetry = s` | Infinite retry |
 | Timeout resolves loading | `phase s = Loading rid -> phase (step s (TimedOut rid)) = Errored` | Stuck spinner |
 
+### 3. SafeAsyncButton — Verified async button
+
+→ [`docs/async-button.md`](./docs/async-button.md)
+
+A button that tracks whether an async operation is in-flight. Clicks while loading are silently ignored — proved, not just guarded.
+
+**State:** `Idle | Loading`
+**Events:** `Click | Success | Failure`
+
+**Proved invariant:**
+
+| Property | Statement |
+|----------|-----------|
+| Click ignored while loading | `reducer Loading Click = Loading` |
+
+### 4. SafeUndoTree — Verified tree zipper
+
+→ [`docs/undo-tree.md`](./docs/undo-tree.md)
+
+A navigable tree with `Leaf`, `Link`, and `Node` constructors. Navigation is modelled as a zipper (focus + context breadcrumbs) and driven by a verified reducer. Round-trip theorems guarantee that navigating into a subtree and back never corrupts the tree.
+
+**State:** `cursor A = At (tree A) (ctx A) | Failed`
+**Events:** `EvGoLeft | EvGoRight | EvGoLink | EvGoUp`
+
+**Proved invariants:**
+
+| Property | Statement |
+|----------|-----------|
+| Left round-trip | `reconstruct (go_up (go_left (At (Node l r) ctx))) = reconstruct (At (Node l r) ctx)` |
+| Right round-trip | `reconstruct (go_up (go_right (At (Node l r) ctx))) = reconstruct (At (Node l r) ctx)` |
+| Failed absorbs | `f Failed = Failed` for any navigation `f` |
+| Failed step | `step Failed e = Failed` for any event `e` |
+
 ## Project structure
 
 ```
 rocqducers/
+├── docs/                         # Per-component documentation
+│   ├── pick-list.md
+│   ├── loader.md
+│   ├── async-button.md
+│   └── undo-tree.md
 ├── src/                          # React frontend
 │   ├── main.jsx                  #   Entry point
 │   ├── App.jsx                   #   Application shell
-│   ├── SafePickList.jsx          #   Verified pick list component
-│   └── SafeLoader.jsx            #   Verified network loader component
+│   ├── hooks/                    #   React hooks (one per component)
+│   └── components/               #   View + container components
 ├── vite.config.js                # Vite config with Melange aliases
 ├── package.json                  # JS dependencies and scripts
 └── rocqducers/                   # Dune project (Rocq + Melange)
@@ -89,12 +133,14 @@ rocqducers/
     ├── theories/
     │   ├── PickList.v            #   Pick list: state, events, reducer, proofs
     │   ├── Loader.v              #   Network loader: state, events, step, proofs
+    │   ├── AsyncButton.v         #   Async button: state machine and proof
+    │   ├── UndoTree.v            #   Tree zipper: navigation, reconstruction, proofs
     │   └── dune
     ├── extraction/
     │   ├── Extract.v             #   Extraction directives
     │   └── dune
     ├── lib/
-    │   ├── Rocqducers.ml         #   Melange wrapper (array interop)
+    │   ├── Rocqducers.ml         #   Melange wrapper (array interop, constructors)
     │   └── dune
     └── emit/
         └── dune                  #   Melange JS emit target

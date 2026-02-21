@@ -73,6 +73,35 @@ Idle ────── Loading ──────────── Loaded ─�
 | Bounded retries | `retries s >= max_retries s -> step s DoRetry = s` | Infinite retry |
 | Timeout resolves loading | `phase s = Loading rid -> phase (step s (TimedOut rid)) = Errored` | Stuck spinner |
 
+### 3. SafeStateHistory — Verified undo/redo wrapper for any reducer
+
+A generic higher-order component that wraps **any** Rocq reducer with a
+proven-correct undo/redo timeline. The wrapper is defined in `StateHistory.v`
+and is demonstrated here applied to the `PickList` reducer.
+
+**State:** `{ current : S; past : list S; future : list S }`
+**Events:** `Do e` (inner event) | `Undo` | `Redo`
+
+```
+ Do e₁       Do e₂       Undo        Redo
+s₀ ──────── s₁ ──────── s₂ ──────── s₁ ──────── s₂
+                  past=[s₁,s₀]  past=[s₀]   past=[s₁,s₀]
+                  future=[]     future=[s₂]  future=[]
+```
+
+**Proved invariants:**
+
+| Property | Statement |
+|----------|-----------|
+| Undo reverses Do | `current (undo (do e hs)) = current hs` |
+| Redo reverses Undo | `past hs ≠ [] → current (redo (undo hs)) = current hs` |
+| Do clears future | `future (do e hs) = []` |
+| Do extends past | `past (do e hs) = current hs :: past hs` |
+| Undo/Redo are no-ops at edges | `past hs = [] → undo hs = hs` and `future hs = [] → redo hs = hs` |
+| Undo/Redo preserve timeline length | `|past| + |future|` is invariant under Undo and Redo |
+| `can_undo` is correct | `can_undo hs = true ↔ past hs ≠ []` |
+| `can_redo` is correct | `can_redo hs = true ↔ future hs ≠ []` |
+
 ## Project structure
 
 ```
@@ -89,6 +118,8 @@ rocqducers/
     ├── theories/
     │   ├── PickList.v            #   Pick list: state, events, reducer, proofs
     │   ├── Loader.v              #   Network loader: state, events, step, proofs
+    │   ├── AsyncButton.v         #   Async button: state, events, reducer, proofs
+    │   ├── StateHistory.v        #   Generic undo/redo wrapper: state, events, step, proofs
     │   └── dune
     ├── extraction/
     │   ├── Extract.v             #   Extraction directives

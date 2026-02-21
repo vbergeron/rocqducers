@@ -260,3 +260,85 @@ Theorem failed_step :
 Proof.
   intros A e. destruct e ; reflexivity.
 Qed.
+
+(** * 7. Commit — extending the history tree
+
+    [focus_value] reads the representative state value held at the cursor
+    focus. It returns [Some a] for [Leaf a] and [Link a _] (nodes that
+    carry a single value), and [None] for [Node] and [Failed]. *)
+
+Definition focus_value {A} (c : cursor A) : option A :=
+  match c with
+  | At (Leaf a)   _ => Some a
+  | At (Link a _) _ => Some a
+  | _               => None
+  end.
+
+(** [commit new_state] archives the current focus value as a history
+    breadcrumb and advances the cursor to a fresh [Leaf new_state].
+
+    - On a [Leaf a]: the leaf is converted to a [CLink a] crumb and the
+      cursor moves to [Leaf new_state], extending a linear chain.
+    - On a [Link a t]: the existing child [t] is kept as the right branch
+      of a new [Node], and [Leaf new_state] becomes the left branch,
+      modelling branching (git-style) history.
+    - Otherwise: [Failed]. *)
+
+Definition commit {A} (new_state : A) (c : cursor A) : cursor A :=
+  match c with
+  | At (Leaf a)   ctx => At (Leaf new_state) (CLink a ctx)
+  | At (Link a t) ctx => At (Leaf new_state) (CRight t (CLink a ctx))
+  | _                 => Failed
+  end.
+
+(** * 8. History invariants *)
+
+(** Committing a new state makes it the current focus value. *)
+
+Theorem commit_focus_leaf :
+  forall A (s new_s : A) (ctx : ctx A),
+    focus_value (commit new_s (At (Leaf s) ctx)) = Some new_s.
+Proof.
+  intros A s new_s ctx. simpl. reflexivity.
+Qed.
+
+(** After committing, the cursor can always be undone ([go_up] succeeds). *)
+
+Theorem commit_can_go_up :
+  forall A (s new_s : A) (ctx : ctx A),
+    can_go_up (commit new_s (At (Leaf s) ctx)) = true.
+Proof.
+  intros A s new_s ctx. simpl. reflexivity.
+Qed.
+
+(** After committing and undoing, the previous state is recovered. *)
+
+Theorem commit_undo_leaf :
+  forall A (s new_s : A) (ctx : ctx A),
+    focus_value (go_up (commit new_s (At (Leaf s) ctx))) = Some s.
+Proof.
+  intros A s new_s ctx.
+  unfold commit, go_up, cursor_flat_map, step_up, focus_value.
+  reflexivity.
+Qed.
+
+(** Undo followed by redo is the identity: the committed cursor is restored. *)
+
+Theorem commit_undo_redo_leaf :
+  forall A (s new_s : A) (ctx : ctx A),
+    go_link (go_up (commit new_s (At (Leaf s) ctx))) =
+    commit new_s (At (Leaf s) ctx).
+Proof.
+  intros A s new_s ctx.
+  unfold commit, go_up, go_link, cursor_flat_map, step_up, step_link.
+  reflexivity.
+Qed.
+
+(** [commit] on [Failed] stays [Failed]. *)
+
+Theorem commit_failed :
+  forall A (new_s : A),
+    commit new_s (@Failed A) = Failed.
+Proof.
+  intros A new_s. simpl. reflexivity.
+Qed.

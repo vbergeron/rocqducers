@@ -2,6 +2,7 @@ import SafePickList from "./components/SafePickList";
 import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
 import SafeUndoTree from "./components/SafeUndoTree";
+import SafeHistory from "./components/SafeHistory";
 import styles from "./App.module.css";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"];
@@ -44,6 +45,14 @@ export default function App() {
           Invariants: go_left + go_up is a round-trip, Failed absorbs all navigation, cursor depth is non-negative.
         </p>
         <SafeUndoTree />
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>History reducer</h3>
+        <p className={styles.cardDescription}>
+          Any reducer wrapped with UndoTree history. Pick and unpick fruits — every action is a commit you can undo and redo.
+        </p>
+        <SafeHistory />
       </div>
     </div>
   );

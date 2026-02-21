@@ -41,4 +41,6 @@ Separate Extraction
   UndoTree.can_go_link
   UndoTree.can_go_up
   UndoTree.focus_kind
-  UndoTree.cursor_depth.
+  UndoTree.cursor_depth
+  UndoTree.focus_value
+  UndoTree.commit.

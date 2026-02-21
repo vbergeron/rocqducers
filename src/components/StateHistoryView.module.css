@@ -1,0 +1,109 @@
+.container {
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Controls bar ── */
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.4rem;
+  border: 1.5px solid #d1d5db;
+  background: white;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepCount {
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* ── Timeline ── */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+}
+
+.timelineCell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 2.5rem;
+}
+
+.timelineConnector {
+  width: 1.25rem;
+  height: 2px;
+  background: #d1d5db;
+  flex-shrink: 0;
+}
+
+.timelineDot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: #d1d5db;
+  border: 2px solid #d1d5db;
+  transition: background 0.15s;
+}
+
+.timelineDot.past {
+  background: #c7d2fe;
+  border-color: #818cf8;
+}
+
+.timelineDot.current {
+  width: 0.95rem;
+  height: 0.95rem;
+  background: #6366f1;
+  border-color: #4338ca;
+  box-shadow: 0 0 0 3px #e0e7ff;
+}
+
+.timelineDot.future {
+  background: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.timelineLabel {
+  font-size: 0.6rem;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.timelineLabel.currentLabel {
+  color: #6366f1;
+  font-weight: 700;
+}
+
+.timelineLabel.futureLabel {
+  color: #d97706;
+}

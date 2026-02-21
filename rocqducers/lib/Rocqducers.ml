@@ -47,3 +47,16 @@ module AsyncButton = struct
 
   let reducer = Extracted.AsyncButton.reducer
 end
+
+module NavHistory = struct
+  let step = Extracted.NavHistory.step
+  let init = Extracted.NavHistory.init
+
+  let go_back    = Extracted.NavHistory.mk_go_back
+  let go_forward = Extracted.NavHistory.mk_go_forward
+  let navigate   = Extracted.NavHistory.mk_navigate
+
+  let past s    = Array.of_list (Extracted.NavHistory.past s)
+  let present s = Extracted.NavHistory.present s
+  let future s  = Array.of_list (Extracted.NavHistory.future s)
+end

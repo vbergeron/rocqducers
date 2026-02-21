@@ -1,6 +1,7 @@
 import SafePickList from "./components/SafePickList";
 import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
+import SafeNavHistory from "./components/SafeNavHistory";
 import styles from "./App.module.css";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"];
@@ -35,6 +36,14 @@ export default function App() {
           Invariants: clicks are ignored while loading, success and failure always return to idle.
         </p>
         <SafeAsyncButton />
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Navigation history</h3>
+        <p className={styles.cardDescription}>
+          Invariants: GoBack then GoForward is the identity, Navigate clears the future, total count preserved by back/forward.
+        </p>
+        <SafeNavHistory />
       </div>
     </div>
   );

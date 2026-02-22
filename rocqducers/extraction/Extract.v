@@ -4,6 +4,7 @@ From Rocqducers Require Import PickList.
 From Rocqducers Require Loader.
 From Rocqducers Require AsyncButton.
 From Rocqducers Require UndoTree.
+From Rocqducers Require StateHistory.
 
 Extraction Language OCaml.
 
@@ -19,11 +20,11 @@ Extract Inlined Constant Nat.eqb => "(=)".
 Extract Inlined Constant Nat.ltb => "(<)".
 
 Separate Extraction
-  PickList.reduce 
-  PickList.init 
-  PickList.do_pick 
-  PickList.do_unpick 
-  PickList.picked 
+  PickList.reduce
+  PickList.init
+  PickList.do_pick
+  PickList.do_unpick
+  PickList.picked
   PickList.suggestions
   Loader.step Loader.init_state
   Loader.mk_fetch Loader.mk_got_response Loader.mk_got_error
@@ -43,4 +44,8 @@ Separate Extraction
   UndoTree.focus_kind
   UndoTree.cursor_depth
   UndoTree.focus_value
-  UndoTree.commit.
+  UndoTree.commit
+  StateHistory.history_step StateHistory.history_init
+  StateHistory.mk_do StateHistory.mk_undo StateHistory.mk_redo
+  StateHistory.current StateHistory.past StateHistory.future
+  StateHistory.can_undo StateHistory.can_redo.

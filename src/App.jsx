@@ -3,6 +3,7 @@ import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
 import SafeUndoTree from "./components/SafeUndoTree";
 import SafeHistory from "./components/SafeHistory";
+import SafeStateHistory from "./components/SafeStateHistory";
 import styles from "./App.module.css";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"];
@@ -53,6 +54,16 @@ export default function App() {
           Any reducer wrapped with UndoTree history. Pick and unpick fruits — every action is a commit you can undo and redo.
         </p>
         <SafeHistory />
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>State history (undo / redo)</h3>
+        <p className={styles.cardDescription}>
+          Invariants: Undo after Do always restores the previous state; Redo after Undo restores
+          the undone state; a new Do always clears the redo stack; Undo/Redo are no-ops at the
+          edges of the timeline.
+        </p>
+        <SafeStateHistory />
       </div>
     </div>
   );

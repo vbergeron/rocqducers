@@ -83,3 +83,25 @@ module AsyncButton = struct
 
   let reducer = Extracted.AsyncButton.reducer
 end
+
+module StateHistory = struct
+  (** [step inner hs e] is the verified history reducer.
+      [inner] is the wrapped pure reducer (S -> E -> S).
+      [e] is a history event: [do_ ev], [undo], or [redo]. *)
+  let step   = Extracted.StateHistory.history_step
+  let init s = Extracted.StateHistory.history_init s
+
+  (** Event constructors *)
+  let do_ e = Extracted.StateHistory.mk_do e
+  let undo  = Extracted.StateHistory.mk_undo
+  let redo  = Extracted.StateHistory.mk_redo
+
+  (** State accessors *)
+  let current  hs = Extracted.StateHistory.current hs
+  let past     hs = Array.of_list (Extracted.StateHistory.past hs)
+  let future   hs = Array.of_list (Extracted.StateHistory.future hs)
+
+  (** Boolean helpers *)
+  let can_undo hs = Extracted.StateHistory.can_undo hs
+  let can_redo hs = Extracted.StateHistory.can_redo hs
+end

@@ -72,6 +72,14 @@ module UndoTree = struct
 
 end
 
+module StateHistory = struct
+  (** Linear commit: discards the existing Link child (clears forward history). *)
+  let commit       = Extracted.StateHistory.sh_commit
+
+  (** Number of redo steps available at the current cursor position. *)
+  let future_depth = Extracted.StateHistory.sh_future_depth
+end
+
 module AsyncButton = struct
 
   let idle = Extracted.AsyncButton.Idle

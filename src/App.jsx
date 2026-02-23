@@ -1,12 +1,22 @@
 import SafePickList from "./components/SafePickList";
 import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
-import SafeUndoTree from "./components/SafeUndoTree";
-import SafeHistory from "./components/SafeHistory";
-import SafeStateHistory from "./components/SafeStateHistory";
+import LinearHistoryWrapper from "./components/LinearHistoryWrapper";
+import TreeHistoryWrapper from "./components/TreeHistoryWrapper";
+import PickListView from "./components/PickListView";
+import { PickList, UndoTree } from "@rocqducers/lib/Rocqducers.js";
 import styles from "./App.module.css";
 
 const FRUITS = ["Apple", "Banana", "Cherry", "Date", "Elderberry", "Fig", "Grape"];
+
+const INITIAL_PICK_STATE = PickList.init(FRUITS[0], FRUITS.slice(1));
+
+const DEMO_CURSOR = UndoTree.root_cursor(
+  UndoTree.node(
+    UndoTree.link("A", UndoTree.node(UndoTree.leaf("B"), UndoTree.leaf("C"))),
+    UndoTree.leaf("D"),
+  ),
+);
 
 export default function App() {
   return (
@@ -45,15 +55,7 @@ export default function App() {
         <p className={styles.cardDescription}>
           Invariants: go_left + go_up is a round-trip, Failed absorbs all navigation, cursor depth is non-negative.
         </p>
-        <SafeUndoTree />
-      </div>
-
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>History reducer</h3>
-        <p className={styles.cardDescription}>
-          Any reducer wrapped with UndoTree history. Pick and unpick fruits — every action is a commit you can undo and redo.
-        </p>
-        <SafeHistory />
+        <TreeHistoryWrapper initialCursor={DEMO_CURSOR} />
       </div>
 
       <div className={styles.card}>
@@ -63,7 +65,16 @@ export default function App() {
           the undone state; a new Do always clears the redo stack; Undo/Redo are no-ops at the
           edges of the timeline.
         </p>
-        <SafeStateHistory />
+        <LinearHistoryWrapper reducer={PickList.reducer} initialState={INITIAL_PICK_STATE}>
+          {(state, dispatch) => (
+            <PickListView
+              pickedItems={PickList.picked(state)}
+              suggestionItems={PickList.suggestions(state)}
+              onPick={(i) => dispatch(PickList.pick(i))}
+              onUnpick={(i) => dispatch(PickList.unpick(i))}
+            />
+          )}
+        </LinearHistoryWrapper>
       </div>
     </div>
   );

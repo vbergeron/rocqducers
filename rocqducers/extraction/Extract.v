@@ -5,6 +5,7 @@ From Rocqducers Require Loader.
 From Rocqducers Require AsyncButton.
 From Rocqducers Require UndoTree.
 From Rocqducers Require StateHistory.
+From Rocqducers Require TokenPaginator.
 
 Extraction Language OCaml.
 
@@ -48,4 +49,12 @@ Separate Extraction
   StateHistory.history_step StateHistory.history_init
   StateHistory.mk_do StateHistory.mk_undo StateHistory.mk_redo
   StateHistory.current StateHistory.past StateHistory.future
-  StateHistory.can_undo StateHistory.can_redo.
+  StateHistory.can_undo StateHistory.can_redo
+  TokenPaginator.step TokenPaginator.init_state
+  TokenPaginator.mk_fetch TokenPaginator.mk_next TokenPaginator.mk_prev
+  TokenPaginator.mk_got_response TokenPaginator.mk_got_error
+  TokenPaginator.phase TokenPaginator.data
+  TokenPaginator.next_tok TokenPaginator.cur_tok TokenPaginator.back_stack
+  TokenPaginator.is_idle TokenPaginator.is_loading TokenPaginator.loading_rid
+  TokenPaginator.is_loaded TokenPaginator.is_errored
+  TokenPaginator.has_next TokenPaginator.can_go_back.

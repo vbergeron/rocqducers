@@ -3,6 +3,7 @@ import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
 import LinearHistoryWrapper from "./components/LinearHistoryWrapper";
 import TreeHistoryWrapper from "./components/TreeHistoryWrapper";
+import SafeTokenPaginator from "./components/SafeTokenPaginator";
 import PickListView from "./components/PickListView";
 import { PickList, UndoTree } from "@rocqducers/lib/Rocqducers.js";
 import styles from "./App.module.css";
@@ -56,6 +57,17 @@ export default function App() {
           Invariants: go_left + go_up is a round-trip, Failed absorbs all navigation, cursor depth is non-negative.
         </p>
         <TreeHistoryWrapper initialCursor={DEMO_CURSOR} />
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>Token paginator</h3>
+        <p className={styles.cardDescription}>
+          Invariants: loaded implies data present, stale responses ignored, Next is
+          a no-op on the last page, Prev is a no-op at the first page, GotError
+          preserves back_stack, Fetch resets navigation, Prev pops exactly one
+          level, Next extends history by one.
+        </p>
+        <SafeTokenPaginator />
       </div>
 
       <div className={styles.card}>

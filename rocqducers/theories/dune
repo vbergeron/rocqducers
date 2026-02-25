@@ -1,4 +1,4 @@
 (rocq.theory
  (name Rocqducers)
- (modules PickList Loader AsyncButton UndoTree StateHistory)
+ (modules PickList Loader AsyncButton UndoTree StateHistory TokenPaginator)
  (theories Stdlib))

@@ -84,6 +84,37 @@ module AsyncButton = struct
   let reducer = Extracted.AsyncButton.reducer
 end
 
+module TokenPaginator = struct
+  let step = Extracted.TokenPaginator.step
+  let init = Extracted.TokenPaginator.init_state
+
+  (** Event constructors *)
+  let fetch        = Extracted.TokenPaginator.mk_fetch
+  let next_        = Extracted.TokenPaginator.mk_next
+  let prev_        = Extracted.TokenPaginator.mk_prev
+  let got_response = Extracted.TokenPaginator.mk_got_response
+  let got_error    = Extracted.TokenPaginator.mk_got_error
+
+  (** option nat helpers: None = no token (first page), Some t = opaque token *)
+  let some_token (t : int) : int option = Some t
+  let no_token : int option = None
+
+  (** Phase inspection *)
+  let phase       s = Extracted.TokenPaginator.phase s
+  let is_idle       = Extracted.TokenPaginator.is_idle
+  let is_loading    = Extracted.TokenPaginator.is_loading
+  let loading_rid   = Extracted.TokenPaginator.loading_rid
+  let is_loaded     = Extracted.TokenPaginator.is_loaded
+  let is_errored    = Extracted.TokenPaginator.is_errored
+
+  (** State accessors *)
+  let data      s = Extracted.TokenPaginator.data s
+  let cur_tok   s = Extracted.TokenPaginator.cur_tok s
+  let has_next    = Extracted.TokenPaginator.has_next
+  let can_go_back = Extracted.TokenPaginator.can_go_back
+  let back_depth s = List.length (Extracted.TokenPaginator.back_stack s)
+end
+
 module StateHistory = struct
   (** [step inner hs e] is the verified history reducer.
       [inner] is the wrapped pure reducer (S -> E -> S).

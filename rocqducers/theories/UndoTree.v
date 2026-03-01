@@ -1,138 +1,163 @@
 From Stdlib Require Import List Arith.
 
+Section UndoTree.
+
+Context {St E : Type}.
+Variable inner : St -> E -> St.
+
 (** * 1. Data structures
 
     A tree with three constructors:
-    - [Leaf a]: a terminal node holding value [a]
-    - [Link a t]: a chain node with value [a] and single child [t]
+    - [Leaf s]: a terminal node holding state [s]
+    - [Link s t]: a chain node with state [s] and single child [t]
     - [Node l r]: a binary node with left child [l] and right child [r] *)
 
-Inductive tree (A : Type) : Type :=
-  | Leaf : A -> tree A
-  | Link : A -> tree A -> tree A
-  | Node : tree A -> tree A -> tree A.
+Inductive tree : Type :=
+  | Leaf : St -> tree
+  | Link : St -> tree -> tree
+  | Node : tree -> tree -> tree.
 
 (** A zipper context records the path from the root to the current focus.
     Each constructor represents one step up the tree. *)
 
-Inductive ctx (A : Type) : Type :=
-  | Top    : ctx A
-  | CLink  : A -> ctx A -> ctx A
-  | CLeft  : ctx A -> tree A -> ctx A
-  | CRight : tree A -> ctx A -> ctx A.
+Inductive ctx : Type :=
+  | Top    : ctx
+  | CLink  : St -> ctx -> ctx
+  | CLeft  : ctx -> tree -> ctx
+  | CRight : tree -> ctx -> ctx.
 
-(** A cursor is either a valid position [At focus ctx] or a [Failed]
+(** A cursor is either a valid position [At focus k] or a [Failed]
     navigation result. [Failed] acts as an absorbing element. *)
 
-Inductive cursor (A : Type) : Type :=
-  | At     : tree A -> ctx A -> cursor A
-  | Failed : cursor A.
+Inductive cursor : Type :=
+  | At     : tree -> ctx -> cursor
+  | Failed : cursor.
 
 (** * 2. Navigation
 
     [cursor_flat_map] is the sequencing primitive: it applies a step
     function to a valid cursor and propagates [Failed] unchanged. *)
 
-Definition cursor_flat_map {A} (c : cursor A) (f : tree A -> ctx A -> cursor A) : cursor A :=
+Definition cursor_flat_map (c : cursor) (f : tree -> ctx -> cursor) : cursor :=
   match c with
-  | Failed       => Failed
-  | At focus ctx => f focus ctx
+  | Failed     => Failed
+  | At focus k => f focus k
   end.
 
 Notation "c |> f" := (f c) (at level 51, left associativity).
 
-Definition step_left {A} (focus : tree A) (ctx : ctx A) : cursor A :=
+Definition step_left (focus : tree) (k : ctx) : cursor :=
   match focus with
-  | Node l r => At l (CLeft ctx r)
+  | Node l r => At l (CLeft k r)
   | _        => Failed
   end.
 
-Definition step_right {A} (focus : tree A) (ctx : ctx A) : cursor A :=
+Definition step_right (focus : tree) (k : ctx) : cursor :=
   match focus with
-  | Node l r => At r (CRight l ctx)
+  | Node l r => At r (CRight l k)
   | _        => Failed
   end.
 
-Definition step_link {A} (focus : tree A) (ctx : ctx A) : cursor A :=
+Definition step_link (focus : tree) (k : ctx) : cursor :=
   match focus with
-  | Link a t => At t (CLink a ctx)
+  | Link s t => At t (CLink s k)
   | _        => Failed
   end.
 
-Definition step_up {A} (focus : tree A) (ctx : ctx A) : cursor A :=
-  match ctx with
-  | Top           => Failed
-  | CLink a ctx'  => At (Link a focus) ctx'
-  | CLeft ctx' r  => At (Node focus r) ctx'
-  | CRight l ctx' => At (Node l focus) ctx'
+Definition step_up (focus : tree) (k : ctx) : cursor :=
+  match k with
+  | Top          => Failed
+  | CLink s k'   => At (Link s focus) k'
+  | CLeft k' r   => At (Node focus r) k'
+  | CRight l k'  => At (Node l focus) k'
   end.
 
-Definition go_left  {A} (c : cursor A) : cursor A := cursor_flat_map c step_left.
-Definition go_right {A} (c : cursor A) : cursor A := cursor_flat_map c step_right.
-Definition go_link  {A} (c : cursor A) : cursor A := cursor_flat_map c step_link.
-Definition go_up    {A} (c : cursor A) : cursor A := cursor_flat_map c step_up.
+Definition go_left  (c : cursor) : cursor := cursor_flat_map c step_left.
+Definition go_right (c : cursor) : cursor := cursor_flat_map c step_right.
+Definition go_link  (c : cursor) : cursor := cursor_flat_map c step_link.
+Definition go_up    (c : cursor) : cursor := cursor_flat_map c step_up.
 
 (** * 3. Reconstruction
 
     [zip_up] rebuilds the full tree by folding the context over the focus.
     It is structurally recursive on [ctx], peeling off one crumb per step. *)
 
-Fixpoint zip_up {A} (focus : tree A) (c : ctx A) : tree A :=
-  match c with
-  | Top           => focus
-  | CLink a ctx'  => zip_up (Link a focus) ctx'
-  | CLeft ctx' r  => zip_up (Node focus r) ctx'
-  | CRight l ctx' => zip_up (Node l focus) ctx'
+Fixpoint zip_up (focus : tree) (k : ctx) : tree :=
+  match k with
+  | Top          => focus
+  | CLink s k'   => zip_up (Link s focus) k'
+  | CLeft k' r   => zip_up (Node focus r) k'
+  | CRight l k'  => zip_up (Node l focus) k'
   end.
 
 (** [reconstruct] returns the root of the tree the cursor is embedded in,
     or [None] if the cursor has [Failed]. *)
 
-Definition reconstruct {A} (c : cursor A) : option (tree A) :=
+Definition reconstruct (c : cursor) : option tree :=
   match c with
-  | Failed        => None
-  | At focus ctx  => Some (zip_up focus ctx)
+  | Failed     => None
+  | At focus k => Some (zip_up focus k)
   end.
 
-Definition root_cursor {A} (t : tree A) : cursor A := At t Top.
+Definition init (t : tree) : cursor := At t Top.
 
-(** * 4. Reducer
+(** * 4. Events
 
-    Events drive cursor navigation. Each constructor corresponds to
-    one of the four navigation primitives. *)
+    [ut_event] extends the four navigation primitives with [Do e], which
+    applies the inner reducer to advance the history. *)
 
-Inductive event : Type :=
-  | EvGoLeft
-  | EvGoRight
-  | EvGoLink
-  | EvGoUp.
+Inductive ut_event : Type :=
+  | Do      : E -> ut_event
+  | GoLeft  : ut_event
+  | GoRight : ut_event
+  | GoLink  : ut_event
+  | GoUp    : ut_event.
 
-Definition step {A} (c : cursor A) (e : event) : cursor A :=
-  match e with
-  | EvGoLeft  => go_left c
-  | EvGoRight => go_right c
-  | EvGoLink  => go_link c
-  | EvGoUp    => go_up c
+(** [do_step] commits a new state computed by [inner] from the current
+    focus state and event [e].
+
+    - On a [Leaf s]: converts the leaf to a [CLink s] crumb and moves
+      to [Leaf (inner s e)], extending a linear chain.
+    - On a [Link s t]: keeps the old child [t] as the right branch of a
+      new [Node], and [Leaf (inner s e)] becomes the left branch,
+      modelling branching (git-style) history.
+    - On a [Node] or [Failed]: [Failed]. *)
+
+Definition do_step (focus : tree) (k : ctx) (e : E) : cursor :=
+  match focus with
+  | Leaf s   => At (Leaf (inner s e)) (CLink s k)
+  | Link s t => At (Leaf (inner s e)) (CRight t (CLink s k))
+  | Node _ _ => Failed
   end.
+
+Definition step (c : cursor) (e : ut_event) : cursor :=
+  cursor_flat_map c (fun focus k =>
+    match e with
+    | Do ev   => do_step focus k ev
+    | GoLeft  => step_left focus k
+    | GoRight => step_right focus k
+    | GoLink  => step_link focus k
+    | GoUp    => step_up focus k
+    end).
 
 (** * 5. Inspection
 
     Boolean predicates and nat discriminants for cursor inspection,
     safe to call from the UI layer. *)
 
-Definition is_failed {A} (c : cursor A) : bool :=
+Definition is_failed (c : cursor) : bool :=
   match c with Failed => true | _ => false end.
 
-Definition can_go_left {A} (c : cursor A) : bool :=
+Definition can_go_left (c : cursor) : bool :=
   match c with At (Node _ _) _ => true | _ => false end.
 
-Definition can_go_right {A} (c : cursor A) : bool :=
+Definition can_go_right (c : cursor) : bool :=
   match c with At (Node _ _) _ => true | _ => false end.
 
-Definition can_go_link {A} (c : cursor A) : bool :=
+Definition can_go_link (c : cursor) : bool :=
   match c with At (Link _ _) _ => true | _ => false end.
 
-Definition can_go_up {A} (c : cursor A) : bool :=
+Definition can_go_up (c : cursor) : bool :=
   match c with
   | At _ Top => false
   | At _ _   => true
@@ -141,28 +166,38 @@ Definition can_go_up {A} (c : cursor A) : bool :=
 
 (** Depth of a context = number of steps back to the root. *)
 
-Fixpoint ctx_depth {A} (c : ctx A) : nat :=
-  match c with
-  | Top           => 0
-  | CLink _ ctx'  => S (ctx_depth ctx')
-  | CLeft ctx' _  => S (ctx_depth ctx')
-  | CRight _ ctx' => S (ctx_depth ctx')
+Fixpoint ctx_depth (k : ctx) : nat :=
+  match k with
+  | Top          => 0
+  | CLink _ k'   => S (ctx_depth k')
+  | CLeft k' _   => S (ctx_depth k')
+  | CRight _ k'  => S (ctx_depth k')
   end.
 
-Definition cursor_depth {A} (c : cursor A) : nat :=
+Definition cursor_depth (c : cursor) : nat :=
   match c with
   | Failed    => 0
-  | At _ ctx  => ctx_depth ctx
+  | At _ k    => ctx_depth k
   end.
 
 (** Focus kind discriminant: 0 = Leaf, 1 = Link, 2 = Node, 3 = Failed. *)
 
-Definition focus_kind {A} (c : cursor A) : nat :=
+Definition focus_kind (c : cursor) : nat :=
   match c with
   | At (Leaf _)   _ => 0
   | At (Link _ _) _ => 1
   | At (Node _ _) _ => 2
   | Failed          => 3
+  end.
+
+(** [focus_value] reads the state value held at the cursor focus.
+    It returns [Some s] for [Leaf s] and [Link s _], and [None] otherwise. *)
+
+Definition focus_value (c : cursor) : option St :=
+  match c with
+  | At (Leaf s)   _ => Some s
+  | At (Link s _) _ => Some s
+  | _               => None
   end.
 
 (** * 6. Theorems *)
@@ -171,10 +206,10 @@ Definition focus_kind {A} (c : cursor A) : nat :=
     going up afterwards restores the original cursor exactly. *)
 
 Theorem go_left_up :
-  forall A (l r : tree A) (ctx : ctx A),
-    go_up (go_left (At (Node l r) ctx)) = At (Node l r) ctx.
+  forall (l r : tree) (k : ctx),
+    go_up (go_left (At (Node l r) k)) = At (Node l r) k.
 Proof.
-  intros A l r ctx.
+  intros l r k.
   unfold go_left, go_up.
   unfold cursor_flat_map.
   simpl step_left.
@@ -186,10 +221,10 @@ Qed.
     going up afterwards restores the original cursor exactly. *)
 
 Theorem go_right_up :
-  forall A (l r : tree A) (ctx : ctx A),
-    go_up (go_right (At (Node l r) ctx)) = At (Node l r) ctx.
+  forall (l r : tree) (k : ctx),
+    go_up (go_right (At (Node l r) k)) = At (Node l r) k.
 Proof.
-  intros A l r ctx.
+  intros l r k.
   unfold go_right, go_up.
   unfold cursor_flat_map.
   simpl step_right.
@@ -200,42 +235,40 @@ Qed.
 (** Any navigation step on a [Failed] cursor stays [Failed]. *)
 
 Theorem failed_absorbs :
-  forall A (f : cursor A -> cursor A),
+  forall (f : cursor -> cursor),
     f = go_left \/ f = go_right \/ f = go_link \/ f = go_up ->
-    f (@Failed A) = @Failed A.
+    f Failed = Failed.
 Proof.
-  intros A f [Hl | [Hr | [Hk | Hu]]] ; subst ; reflexivity.
+  intros f [Hl | [Hr | [Hk | Hu]]] ; subst ; reflexivity.
 Qed.
 
 (** [cursor_flat_map] with the identity continuation is the identity. *)
 
 Theorem flat_map_right_id :
-  forall A (c : cursor A),
-    cursor_flat_map c (fun focus ctx => At focus ctx) = c.
+  forall (c : cursor),
+    cursor_flat_map c (fun focus k => At focus k) = c.
 Proof.
-  intros A c. destruct c ; reflexivity.
+  intros c. destruct c ; reflexivity.
 Qed.
 
 (** [cursor_flat_map] is associative. *)
 
 Theorem flat_map_assoc :
-  forall A (c : cursor A) (f g : tree A -> ctx A -> cursor A),
+  forall (c : cursor) (f g : tree -> ctx -> cursor),
     cursor_flat_map (cursor_flat_map c f) g =
-    cursor_flat_map c (fun focus ctx => cursor_flat_map (f focus ctx) g).
+    cursor_flat_map c (fun focus k => cursor_flat_map (f focus k) g).
 Proof.
-  intros A c f g. destruct c ; reflexivity.
+  intros c f g. destruct c ; reflexivity.
 Qed.
 
-(** The reconstructed tree is invariant under go_left + go_up round-trips:
-    navigating into a [Node]'s left child and back does not change
-    the underlying tree. *)
+(** The reconstructed tree is invariant under go_left + go_up round-trips. *)
 
 Theorem reconstruct_left_round_trip :
-  forall A (l r : tree A) (ctx : ctx A),
-    reconstruct (go_up (go_left (At (Node l r) ctx))) =
-    reconstruct (At (Node l r) ctx).
+  forall (l r : tree) (k : ctx),
+    reconstruct (go_up (go_left (At (Node l r) k))) =
+    reconstruct (At (Node l r) k).
 Proof.
-  intros A l r ctx.
+  intros l r k.
   rewrite go_left_up.
   reflexivity.
 Qed.
@@ -243,11 +276,11 @@ Qed.
 (** Same invariant for right child navigation. *)
 
 Theorem reconstruct_right_round_trip :
-  forall A (l r : tree A) (ctx : ctx A),
-    reconstruct (go_up (go_right (At (Node l r) ctx))) =
-    reconstruct (At (Node l r) ctx).
+  forall (l r : tree) (k : ctx),
+    reconstruct (go_up (go_right (At (Node l r) k))) =
+    reconstruct (At (Node l r) k).
 Proof.
-  intros A l r ctx.
+  intros l r k.
   rewrite go_right_up.
   reflexivity.
 Qed.
@@ -255,90 +288,126 @@ Qed.
 (** Any step from a [Failed] cursor stays [Failed]. *)
 
 Theorem failed_step :
-  forall A (e : event),
-    @step A Failed e = Failed.
+  forall (e : ut_event),
+    step Failed e = Failed.
 Proof.
-  intros A e. destruct e ; reflexivity.
+  intros e. destruct e ; reflexivity.
 Qed.
 
-(** * 7. Commit — extending the history tree
+(** * 7. History invariants for [do_step] *)
 
-    [focus_value] reads the representative state value held at the cursor
-    focus. It returns [Some a] for [Leaf a] and [Link a _] (nodes that
-    carry a single value), and [None] for [Node] and [Failed]. *)
+(** [do_step] on a [Leaf] makes the new state the current focus value. *)
 
-Definition focus_value {A} (c : cursor A) : option A :=
-  match c with
-  | At (Leaf a)   _ => Some a
-  | At (Link a _) _ => Some a
-  | _               => None
-  end.
-
-(** [commit new_state] archives the current focus value as a history
-    breadcrumb and advances the cursor to a fresh [Leaf new_state].
-
-    - On a [Leaf a]: the leaf is converted to a [CLink a] crumb and the
-      cursor moves to [Leaf new_state], extending a linear chain.
-    - On a [Link a t]: the existing child [t] is kept as the right branch
-      of a new [Node], and [Leaf new_state] becomes the left branch,
-      modelling branching (git-style) history.
-    - Otherwise: [Failed]. *)
-
-Definition commit {A} (new_state : A) (c : cursor A) : cursor A :=
-  match c with
-  | At (Leaf a)   ctx => At (Leaf new_state) (CLink a ctx)
-  | At (Link a t) ctx => At (Leaf new_state) (CRight t (CLink a ctx))
-  | _                 => Failed
-  end.
-
-(** * 8. History invariants *)
-
-(** Committing a new state makes it the current focus value. *)
-
-Theorem commit_focus_leaf :
-  forall A (s new_s : A) (ctx : ctx A),
-    focus_value (commit new_s (At (Leaf s) ctx)) = Some new_s.
+Theorem do_step_focus_leaf :
+  forall (s : St) (k : ctx) (e : E),
+    focus_value (do_step (Leaf s) k e) = Some (inner s e).
 Proof.
-  intros A s new_s ctx. simpl. reflexivity.
+  intros s k e. simpl. reflexivity.
 Qed.
 
-(** After committing, the cursor can always be undone ([go_up] succeeds). *)
+(** After [do_step] on a [Leaf], the cursor can always go up. *)
 
-Theorem commit_can_go_up :
-  forall A (s new_s : A) (ctx : ctx A),
-    can_go_up (commit new_s (At (Leaf s) ctx)) = true.
+Theorem do_step_can_go_up_leaf :
+  forall (s : St) (k : ctx) (e : E),
+    can_go_up (do_step (Leaf s) k e) = true.
 Proof.
-  intros A s new_s ctx. simpl. reflexivity.
+  intros s k e. simpl. reflexivity.
 Qed.
 
-(** After committing and undoing, the previous state is recovered. *)
+(** After [do_step] on a [Leaf] and going up, the previous state is recovered. *)
 
-Theorem commit_undo_leaf :
-  forall A (s new_s : A) (ctx : ctx A),
-    focus_value (go_up (commit new_s (At (Leaf s) ctx))) = Some s.
+Theorem do_step_undo_leaf :
+  forall (s : St) (k : ctx) (e : E),
+    focus_value (go_up (do_step (Leaf s) k e)) = Some s.
 Proof.
-  intros A s new_s ctx.
-  unfold commit, go_up, cursor_flat_map, step_up, focus_value.
+  intros s k e.
+  unfold do_step, go_up, cursor_flat_map, step_up, focus_value.
   reflexivity.
 Qed.
 
-(** Undo followed by redo is the identity: the committed cursor is restored. *)
+(** Undo followed by redo (go_link) restores the cursor after [do_step]. *)
 
-Theorem commit_undo_redo_leaf :
-  forall A (s new_s : A) (ctx : ctx A),
-    go_link (go_up (commit new_s (At (Leaf s) ctx))) =
-    commit new_s (At (Leaf s) ctx).
+Theorem do_step_undo_redo_leaf :
+  forall (s : St) (k : ctx) (e : E),
+    go_link (go_up (do_step (Leaf s) k e)) = do_step (Leaf s) k e.
 Proof.
-  intros A s new_s ctx.
-  unfold commit, go_up, go_link, cursor_flat_map, step_up, step_link.
+  intros s k e.
+  unfold do_step, go_up, go_link, cursor_flat_map, step_up, step_link.
   reflexivity.
 Qed.
 
-(** [commit] on [Failed] stays [Failed]. *)
+(** [do_step] on a [Node] yields [Failed]. *)
 
-Theorem commit_failed :
-  forall A (new_s : A),
-    commit new_s (@Failed A) = Failed.
+Theorem do_step_node_failed :
+  forall (l r : tree) (k : ctx) (e : E),
+    do_step (Node l r) k e = Failed.
 Proof.
-  intros A new_s. simpl. reflexivity.
+  intros l r k e. simpl. reflexivity.
 Qed.
+
+(** [step (Do e)] on [Failed] stays [Failed]. *)
+
+Theorem step_do_failed :
+  forall (e : E),
+    step Failed (Do e) = Failed.
+Proof.
+  intros e. simpl. reflexivity.
+Qed.
+
+(** * 8. Correctness of inspection predicates *)
+
+(** Going up from [init] always fails (there is no parent). *)
+
+Theorem init_go_up_failed :
+  forall (t : tree),
+    go_up (init t) = Failed.
+Proof.
+  intros t. unfold init, go_up, cursor_flat_map, step_up. reflexivity.
+Qed.
+
+(** [can_go_up] correctly reflects whether the context is non-[Top]. *)
+
+Theorem can_go_up_correct :
+  forall (focus : tree) (k : ctx),
+    can_go_up (At focus k) = true <-> k <> Top.
+Proof.
+  intros focus k. destruct k ; simpl ; split ; congruence.
+Qed.
+
+(** [can_go_left] correctly reflects whether the focus is a [Node]. *)
+
+Theorem can_go_left_correct :
+  forall (focus : tree) (k : ctx),
+    can_go_left (At focus k) = true <-> exists l r, focus = Node l r.
+Proof.
+  intros focus k. destruct focus ; simpl ; split ;
+    [ discriminate | intros [l [r H]] ; discriminate
+    | discriminate | intros [l [r H]] ; discriminate
+    | intros _ ; eauto | intros _ ; reflexivity ].
+Qed.
+
+(** [can_go_right] correctly reflects whether the focus is a [Node]. *)
+
+Theorem can_go_right_correct :
+  forall (focus : tree) (k : ctx),
+    can_go_right (At focus k) = true <-> exists l r, focus = Node l r.
+Proof.
+  intros focus k. destruct focus ; simpl ; split ;
+    [ discriminate | intros [l [r H]] ; discriminate
+    | discriminate | intros [l [r H]] ; discriminate
+    | intros _ ; eauto | intros _ ; reflexivity ].
+Qed.
+
+(** [can_go_link] correctly reflects whether the focus is a [Link]. *)
+
+Theorem can_go_link_correct :
+  forall (focus : tree) (k : ctx),
+    can_go_link (At focus k) = true <-> exists a b, focus = Link a b.
+Proof.
+  intros focus k. destruct focus ; simpl ; split ;
+    [ discriminate | intros [a [b H]] ; discriminate
+    | intros _ ; eauto | intros _ ; reflexivity
+    | discriminate | intros [a [b H]] ; discriminate ].
+Qed.
+
+End UndoTree.

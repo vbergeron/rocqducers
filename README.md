@@ -94,52 +94,56 @@ A button that tracks whether an async operation is in-flight. Clicks while loadi
 |----------|-----------|
 | Click ignored while loading | `reducer Loading Click = Loading` |
 
-### 4. SafeUndoTree — Verified tree zipper
+### 4. SafeUndoTree — Verified branching history tree
 
 → [`docs/undo-tree.md`](./docs/undo-tree.md)
 
-A navigable tree with `Leaf`, `Link`, and `Node` constructors. Navigation is modelled as a zipper (focus + context breadcrumbs) and driven by a verified reducer. Round-trip theorems guarantee that navigating into a subtree and back never corrupts the tree.
+A navigable history tree with `Leaf`, `Link`, and `Node` constructors, driven by a pluggable inner reducer (`inner : St -> E -> St`). Navigation is modelled as a zipper (focus + context breadcrumbs). Branching is first-class: `Do e` on a `Link` node archives the old branch in a `Node` rather than discarding it.
 
-**State:** `cursor A = At (tree A) (ctx A) | Failed`
-**Events:** `EvGoLeft | EvGoRight | EvGoLink | EvGoUp`
+**State:** `cursor St = At (tree St) (ctx St) | Failed`
+**Events:** `Do e` (apply inner reducer) `| GoLeft | GoRight | GoLink | GoUp`
 
 **Proved invariants:**
 
 | Property | Statement |
 |----------|-----------|
-| Left round-trip | `reconstruct (go_up (go_left (At (Node l r) ctx))) = reconstruct (At (Node l r) ctx)` |
-| Right round-trip | `reconstruct (go_up (go_right (At (Node l r) ctx))) = reconstruct (At (Node l r) ctx)` |
+| Left round-trip | `go_up (go_left (At (Node l r) k)) = At (Node l r) k` |
+| Right round-trip | `go_up (go_right (At (Node l r) k)) = At (Node l r) k` |
+| Do then undo | `focus_value (go_up (do_step (Leaf s) k e)) = Some s` |
+| Do then undo/redo | `go_link (go_up (do_step (Leaf s) k e)) = do_step (Leaf s) k e` |
 | Failed absorbs | `f Failed = Failed` for any navigation `f` |
 | Failed step | `step Failed e = Failed` for any event `e` |
+| Predicate correctness | `can_go_up (At f k) = true ↔ k ≠ Top` (and analogues for left/right/link) |
 
-### 5. SafeStateHistory — Verified undo/redo wrapper for any reducer
+### 5. SafeUndoList — Verified linear undo/redo wrapper
 
-A generic higher-order component that wraps **any** Rocq reducer with a
-proven-correct undo/redo timeline. The wrapper is defined in `StateHistory.v`
-and is demonstrated here applied to the `PickList` reducer.
+→ [`docs/undo-list.md`](./docs/undo-list.md)
 
-**State:** `{ current : S; past : list S; future : list S }`
-**Events:** `Do e` (inner event) | `Undo` | `Redo`
+A generic higher-order wrapper that adds a proven-correct undo/redo timeline to **any** Rocq reducer. It is the linear-history counterpart to `UndoTree`. `Undo`/`Redo` on an empty stack return a `Failed` absorbing state rather than silently doing nothing.
+
+**State:** `state St = Hist curr past future | Failed`
+**Events:** `Do e` (inner event) `| Undo | Redo`
 
 ```
- Do e₁       Do e₂       Undo        Redo
+ Do e₁       Do e₂       Undo          Redo
 s₀ ──────── s₁ ──────── s₂ ──────── s₁ ──────── s₂
-                  past=[s₁,s₀]  past=[s₀]   past=[s₁,s₀]
-                  future=[]     future=[s₂]  future=[]
+              past=[s₀]   past=[s₁,s₀]  past=[s₀]   past=[s₁,s₀]
+              future=[]   future=[]     future=[s₂]  future=[]
 ```
 
 **Proved invariants:**
 
 | Property | Statement |
 |----------|-----------|
-| Undo reverses Do | `current (undo (do e hs)) = current hs` |
-| Redo reverses Undo | `past hs ≠ [] → current (redo (undo hs)) = current hs` |
-| Do clears future | `future (do e hs) = []` |
-| Do extends past | `past (do e hs) = current hs :: past hs` |
-| Undo/Redo are no-ops at edges | `past hs = [] → undo hs = hs` and `future hs = [] → redo hs = hs` |
-| Undo/Redo preserve timeline length | `|past| + |future|` is invariant under Undo and Redo |
-| `can_undo` is correct | `can_undo hs = true ↔ past hs ≠ []` |
-| `can_redo` is correct | `can_redo hs = true ↔ future hs ≠ []` |
+| Undo reverses Do | `current (step (step hs (Do e)) Undo) = current hs` |
+| Redo reverses Undo | `p ≠ [] → step (step (Hist curr p fut) Undo) Redo = Hist curr p fut` |
+| Do clears future | `future (step (Hist curr p fut) (Do e)) = []` |
+| Do extends past | `past (step (Hist curr p fut) (Do e)) = curr :: p` |
+| Undo/Redo at edges yield Failed | `step (init s) Undo = Failed` and `step (init s) Redo = Failed` |
+| Undo/Redo preserve timeline length | `p ≠ [] → |past| + |future|` preserved by `Undo` (analogously for `Redo`) |
+| `can_undo` is correct | `can_undo (Hist curr p fut) = true ↔ p ≠ []` |
+| `can_redo` is correct | `can_redo (Hist curr p fut) = true ↔ fut ≠ []` |
+| Failed absorbs | `step Failed e = Failed` for any `e` |
 
 ## Project structure
 
@@ -149,7 +153,8 @@ rocqducers/
 │   ├── pick-list.md
 │   ├── loader.md
 │   ├── async-button.md
-│   └── undo-tree.md
+│   ├── undo-tree.md
+│   └── undo-list.md
 ├── src/                          # React frontend
 │   ├── main.jsx                  #   Entry point
 │   ├── App.jsx                   #   Application shell
@@ -163,8 +168,8 @@ rocqducers/
     │   ├── PickList.v            #   Pick list: state, events, reducer, proofs
     │   ├── Loader.v              #   Network loader: state, events, step, proofs
     │   ├── AsyncButton.v         #   Async button: state machine and proof
-    │   ├── UndoTree.v            #   Tree zipper: navigation, reconstruction, proofs
-    │   ├── StateHistory.v        #   Generic undo/redo wrapper: state, events, step, proofs
+    │   ├── UndoTree.v            #   Branching history tree: zipper, inner reducer, proofs
+    │   ├── UndoList.v            #   Linear undo/redo wrapper: state, events, step, proofs
     │   └── dune
     ├── extraction/
     │   ├── Extract.v             #   Extraction directives

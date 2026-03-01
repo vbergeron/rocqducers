@@ -38,19 +38,20 @@ end
 
 module UndoTree = struct
 
-  let step        = Extracted.UndoTree.step
-  let root_cursor = Extracted.UndoTree.root_cursor
+  let step = Extracted.UndoTree.step
+  let init = Extracted.UndoTree.init
 
   (* Tree constructors *)
   let leaf a   = Extracted.UndoTree.Leaf a
   let link a t = Extracted.UndoTree.Link (a, t)
   let node l r = Extracted.UndoTree.Node (l, r)
 
-  (* Event values *)
-  let ev_go_left  = Extracted.UndoTree.EvGoLeft
-  let ev_go_right = Extracted.UndoTree.EvGoRight
-  let ev_go_link  = Extracted.UndoTree.EvGoLink
-  let ev_go_up    = Extracted.UndoTree.EvGoUp
+  (* Event constructors — [do_ ev] applies the inner reducer *)
+  let do_ ev      = Extracted.UndoTree.Do ev
+  let ev_go_left  = Extracted.UndoTree.GoLeft
+  let ev_go_right = Extracted.UndoTree.GoRight
+  let ev_go_link  = Extracted.UndoTree.GoLink
+  let ev_go_up    = Extracted.UndoTree.GoUp
 
   (* Cursor inspection (bool / int, safe from JS) *)
   let is_failed    = Extracted.UndoTree.is_failed
@@ -60,8 +61,7 @@ module UndoTree = struct
   let can_go_up    = Extracted.UndoTree.can_go_up
   let focus_kind   = Extracted.UndoTree.focus_kind   (* 0=Leaf 1=Link 2=Node 3=Failed *)
   let cursor_depth = Extracted.UndoTree.cursor_depth
-  let focus_value  = Extracted.UndoTree.focus_value  (* option A: None=0, Some a={TAG:0,_0:a} *)
-  let commit       = Extracted.UndoTree.commit
+  let focus_value  = Extracted.UndoTree.focus_value  (* option St: None=0, Some s={TAG:0,_0:s} *)
 
   (* String-specific label for the focused node (for demo display) *)
   let focus_label c =
@@ -84,24 +84,26 @@ module AsyncButton = struct
   let reducer = Extracted.AsyncButton.reducer
 end
 
-module StateHistory = struct
+module UndoList = struct
   (** [step inner hs e] is the verified history reducer.
-      [inner] is the wrapped pure reducer (S -> E -> S).
-      [e] is a history event: [do_ ev], [undo], or [redo]. *)
-  let step   = Extracted.StateHistory.history_step
-  let init s = Extracted.StateHistory.history_init s
+      [inner] is the wrapped pure reducer (St -> E -> St).
+      [e] is a history event: [do_ ev], [undo], or [redo].
+      Returns [Failed] when [undo] or [redo] is impossible. *)
+  let step   = Extracted.UndoList.step
+  let init s = Extracted.UndoList.init s
 
   (** Event constructors *)
-  let do_ e = Extracted.StateHistory.mk_do e
-  let undo  = Extracted.StateHistory.mk_undo
-  let redo  = Extracted.StateHistory.mk_redo
+  let do_ e = Extracted.UndoList.mk_do e
+  let undo  = Extracted.UndoList.mk_undo
+  let redo  = Extracted.UndoList.mk_redo
 
-  (** State accessors *)
-  let current  hs = Extracted.StateHistory.current hs
-  let past     hs = Array.of_list (Extracted.StateHistory.past hs)
-  let future   hs = Array.of_list (Extracted.StateHistory.future hs)
+  (** State accessors — [current] returns [option St]; [None] when [Failed]. *)
+  let current  hs = Extracted.UndoList.current hs
+  let past     hs = Array.of_list (Extracted.UndoList.past hs)
+  let future   hs = Array.of_list (Extracted.UndoList.future hs)
 
   (** Boolean helpers *)
-  let can_undo hs = Extracted.StateHistory.can_undo hs
-  let can_redo hs = Extracted.StateHistory.can_redo hs
+  let is_failed hs = Extracted.UndoList.is_failed hs
+  let can_undo  hs = Extracted.UndoList.can_undo hs
+  let can_redo  hs = Extracted.UndoList.can_redo hs
 end

@@ -22,7 +22,7 @@ Rocqducers bridges the [Rocq proof assistant](https://rocq-prover.org/) (formerl
 
 2. **Extraction** — Rocq's extraction mechanism translates the verified definitions into OCaml. Inductive types like `list`, `nat`, and `option` are mapped to their OCaml counterparts for efficient runtime representation. Configuration lives in `rocqducers/extraction/Extract.v`.
 
-3. **Melange** — The extracted OCaml is compiled to ES6 JavaScript modules by [Melange](https://melange.re/). A thin wrapper (`rocqducers/lib/Rocqducers.ml`) adds array conversion helpers so the JS consumer works with plain arrays instead of linked lists.
+3. **Melange** — The extracted OCaml is compiled to ES6 JavaScript modules by [Melange](https://melange.re/). React hooks in `rocqducers/lib/Hooks.ml` handle array conversion and event construction so the JS consumer works with plain arrays instead of linked lists.
 
 4. **Vite + React** — The generated JS is imported like any other module. React's `useReducer` hook accepts the verified reducer directly — the proof-carrying state machine drives the UI.
 
@@ -145,8 +145,7 @@ rocqducers/
     │   ├── Extract.v             #   Extraction directives
     │   └── dune
     ├── lib/
-    │   ├── Rocqducers.ml         #   Melange wrapper (array interop, constructors)
-    │   ├── Hooks.ml              #   React hooks (useReducer bindings, tree visualization)
+    │   ├── Hooks.ml              #   React hooks (useReducer bindings, tree visualization, array interop)
     │   └── dune
     └── emit/
         └── dune                  #   Melange JS emit target

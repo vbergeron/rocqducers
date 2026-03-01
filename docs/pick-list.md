@@ -67,7 +67,6 @@ function MyComponent() {
 |---|---|
 | `rocqducers/theories/PickList.v` | Types, reducer, proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
-| `rocqducers/lib/Rocqducers.ml` | `PickList` OCaml wrapper (list → array, event constructors) |
-| `rocqducers/lib/Hooks.ml` | `use_safe_pick_list` hook |
+| `rocqducers/lib/Hooks.ml` | `use_safe_pick_list` hook, `pick_list_reduce`/`pick_list_init`/`pick_list_props` helpers |
 | `src/components/SafePickList.jsx` | Demo component |
 | `src/components/PickListView.jsx` | Reusable view (used standalone and inside history wrappers) |

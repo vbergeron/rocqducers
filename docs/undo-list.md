@@ -156,18 +156,14 @@ The `use_linear_history` hook in `Hooks.ml` wraps the undo list in React's `useR
 
 ```jsx
 import LinearHistoryWrapper from "./components/LinearHistoryWrapper";
-import { PickList } from "@rocqducers/lib/Rocqducers.js";
+import { pick_list_reduce, pick_list_init, pick_list_props } from "@rocqducers/lib/Hooks.js";
+import PickListView from "./components/PickListView";
 
-const INITIAL = PickList.init(FRUITS[0], FRUITS.slice(1));
+const INITIAL = pick_list_init(FRUITS, 0);
 
-<LinearHistoryWrapper reducer={PickList.reduce} initialState={INITIAL}>
+<LinearHistoryWrapper reducer={pick_list_reduce} initialState={INITIAL}>
   {(state, dispatch) => (
-    <PickListView
-      pickedItems={PickList.picked(state)}
-      suggestionItems={PickList.suggestions(state)}
-      onPick={(i) => dispatch(PickList.pick(i))}
-      onUnpick={(i) => dispatch(PickList.unpick(i))}
-    />
+    <PickListView {...pick_list_props(state, dispatch)} />
   )}
 </LinearHistoryWrapper>
 ```
@@ -178,6 +174,5 @@ const INITIAL = PickList.init(FRUITS[0], FRUITS.slice(1));
 |---|---|
 | `rocqducers/theories/UndoList.v` | Types, step function, all proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
-| `rocqducers/lib/Rocqducers.ml` | `UndoList` OCaml/Melange wrapper |
 | `rocqducers/lib/Hooks.ml` | `use_linear_history` hook |
 | `src/components/LinearHistoryWrapper.jsx` | Wrapper component with timeline visualization and undo/redo controls |

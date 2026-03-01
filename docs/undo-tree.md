@@ -181,18 +181,14 @@ The `use_branching_history` hook in `Hooks.ml` wraps the cursor in React's `useR
 
 ```jsx
 import TreeHistoryWrapper from "./components/TreeHistoryWrapper";
-import { PickList } from "@rocqducers/lib/Rocqducers.js";
+import { pick_list_reduce, pick_list_init, pick_list_props } from "@rocqducers/lib/Hooks.js";
+import PickListView from "./components/PickListView";
 
-const INITIAL = PickList.init(FRUITS[0], FRUITS.slice(1));
+const INITIAL = pick_list_init(FRUITS, 0);
 
-<TreeHistoryWrapper reducer={PickList.reduce} initialState={INITIAL}>
+<TreeHistoryWrapper reducer={pick_list_reduce} initialState={INITIAL}>
   {(state, dispatch) => (
-    <PickListView
-      pickedItems={PickList.picked(state)}
-      suggestionItems={PickList.suggestions(state)}
-      onPick={(i) => dispatch(PickList.pick(i))}
-      onUnpick={(i) => dispatch(PickList.unpick(i))}
-    />
+    <PickListView {...pick_list_props(state, dispatch)} />
   )}
 </TreeHistoryWrapper>
 ```
@@ -205,6 +201,5 @@ The hook reconstructs the full tree from the cursor (via `cursor_to_js`) and ret
 |---|---|
 | `rocqducers/theories/UndoTree.v` | Types, inner reducer integration, navigation, proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
-| `rocqducers/lib/Rocqducers.ml` | `UndoTree` OCaml/Melange wrapper (constructors, inspection) |
 | `rocqducers/lib/Hooks.ml` | `use_branching_history` hook, `cursor_to_js` tree reconstruction |
 | `src/components/TreeHistoryWrapper.jsx` | Wrapper component with tree visualization and navigation |

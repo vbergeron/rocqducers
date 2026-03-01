@@ -150,31 +150,26 @@ The non-empty precondition is required because `Undo`/`Redo` on empty stacks yie
 
 ## React usage
 
+The `use_linear_history` hook in `Hooks.ml` wraps the undo list in React's `useReducer` and exposes `state`, `past`, `future`, `canUndo`, `canRedo`, `dispatch`, `undo`, and `redo`.
+
+`LinearHistoryWrapper` is a ready-made component that accepts any inner reducer and renders a timeline visualization alongside the inner component via a render prop:
+
 ```jsx
-import { UndoList } from "@rocqducers/lib/Rocqducers.js";
+import LinearHistoryWrapper from "./components/LinearHistoryWrapper";
+import { PickList } from "@rocqducers/lib/Rocqducers.js";
 
-// Define the inner reducer for the application state
-const myInner = (state, event) => { /* ... */ return newState; };
+const INITIAL = PickList.init(FRUITS[0], FRUITS.slice(1));
 
-function MyComponent() {
-  const [hs, dispatch] = useReducer(
-    (hs, e) => UndoList.step(myInner, hs, e),
-    UndoList.init(initialState),
-  );
-
-  const canUndo = UndoList.can_undo(hs);
-  const canRedo = UndoList.can_redo(hs);
-  const isFailed = UndoList.is_failed(hs);
-
-  return (
-    <>
-      <button onClick={() => dispatch(UndoList.undo)} disabled={!canUndo}>Undo</button>
-      <button onClick={() => dispatch(UndoList.redo)} disabled={!canRedo}>Redo</button>
-      <button onClick={() => dispatch(UndoList.do_(myEvent))}>Apply</button>
-      {isFailed && <p>History navigation failed.</p>}
-    </>
-  );
-}
+<LinearHistoryWrapper reducer={PickList.reduce} initialState={INITIAL}>
+  {(state, dispatch) => (
+    <PickListView
+      pickedItems={PickList.picked(state)}
+      suggestionItems={PickList.suggestions(state)}
+      onPick={(i) => dispatch(PickList.pick(i))}
+      onUnpick={(i) => dispatch(PickList.unpick(i))}
+    />
+  )}
+</LinearHistoryWrapper>
 ```
 
 ## Source files
@@ -184,3 +179,5 @@ function MyComponent() {
 | `rocqducers/theories/UndoList.v` | Types, step function, all proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
 | `rocqducers/lib/Rocqducers.ml` | `UndoList` OCaml/Melange wrapper |
+| `rocqducers/lib/Hooks.ml` | `use_linear_history` hook |
+| `src/components/LinearHistoryWrapper.jsx` | Wrapper component with timeline visualization and undo/redo controls |

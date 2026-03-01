@@ -175,41 +175,29 @@ The following are extracted from Rocq and safe to call from JavaScript:
 
 ## React usage
 
+The `use_branching_history` hook in `Hooks.ml` wraps the cursor in React's `useReducer` and exposes navigation actions, state inspection, and a JS-friendly tree object for visualization.
+
+`TreeHistoryWrapper` is a ready-made component that accepts any inner reducer and renders the branching tree alongside the inner component via a render prop:
+
 ```jsx
-import { UndoTree } from "@rocqducers/lib/Rocqducers.js";
+import TreeHistoryWrapper from "./components/TreeHistoryWrapper";
+import { PickList } from "@rocqducers/lib/Rocqducers.js";
 
-// Define the inner reducer (pure function, any type)
-const myInner = (state, event) => { /* ... */ return newState; };
+const INITIAL = PickList.init(FRUITS[0], FRUITS.slice(1));
 
-// Build a tree of initial states once at module level
-const TREE = UndoTree.node(
-  UndoTree.link("A", UndoTree.node(UndoTree.leaf("B"), UndoTree.leaf("C"))),
-  UndoTree.leaf("D"),
-);
-
-function MyComponent() {
-  const [cursor, dispatch] = useReducer(
-    (c, e) => UndoTree.step(myInner, c, e),
-    UndoTree.init(TREE),
-  );
-
-  const canGoLeft  = UndoTree.can_go_left(cursor);
-  const canGoRight = UndoTree.can_go_right(cursor);
-  const canGoLink  = UndoTree.can_go_link(cursor);  // redo
-  const canGoUp    = UndoTree.can_go_up(cursor);    // undo
-
-  return (
-    <>
-      <button onClick={() => dispatch(UndoTree.ev_go_left)}  disabled={!canGoLeft}>← Left</button>
-      <button onClick={() => dispatch(UndoTree.ev_go_right)} disabled={!canGoRight}>Right →</button>
-      <button onClick={() => dispatch(UndoTree.ev_go_link)}  disabled={!canGoLink}>↓ Redo</button>
-      <button onClick={() => dispatch(UndoTree.ev_go_up)}    disabled={!canGoUp}>↑ Undo</button>
-      <button onClick={() => dispatch(UndoTree.do_(myEvent))}>Apply event</button>
-      <p>Depth: {UndoTree.cursor_depth(cursor)}</p>
-    </>
-  );
-}
+<TreeHistoryWrapper reducer={PickList.reduce} initialState={INITIAL}>
+  {(state, dispatch) => (
+    <PickListView
+      pickedItems={PickList.picked(state)}
+      suggestionItems={PickList.suggestions(state)}
+      onPick={(i) => dispatch(PickList.pick(i))}
+      onUnpick={(i) => dispatch(PickList.unpick(i))}
+    />
+  )}
+</TreeHistoryWrapper>
 ```
+
+The hook reconstructs the full tree from the cursor (via `cursor_to_js`) and returns it as a `tree` field — a plain JS object tree with `{ kind, focused, children }` nodes — used by the `TreeNode` component to render the visual tree with focus highlighting.
 
 ## Source files
 
@@ -217,7 +205,6 @@ function MyComponent() {
 |---|---|
 | `rocqducers/theories/UndoTree.v` | Types, inner reducer integration, navigation, proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
-| `rocqducers/lib/Rocqducers.ml` | `UndoTree` OCaml/Melange wrapper |
-| `src/hooks/useSafeUndoTree.js` | React hook |
-| `src/components/UndoTreeView.jsx` | View component |
-| `src/components/SafeUndoTree.jsx` | Demo container |
+| `rocqducers/lib/Rocqducers.ml` | `UndoTree` OCaml/Melange wrapper (constructors, inspection) |
+| `rocqducers/lib/Hooks.ml` | `use_branching_history` hook, `cursor_to_js` tree reconstruction |
+| `src/components/TreeHistoryWrapper.jsx` | Wrapper component with tree visualization and navigation |

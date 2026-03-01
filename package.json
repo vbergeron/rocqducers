@@ -1,6 +1,7 @@
 {
   "name": "rocqducers",
   "private": true,
+  "type": "module",
   "scripts": {
     "dune": "dune build @melange --root rocqducers",
     "dev": "npm run dune && vite",
@@ -14,7 +15,9 @@
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "vite": "^6.0.0",
-    "@vitejs/plugin-react": "^4.0.0"
+    "@tailwindcss/vite": "^4.2.1",
+    "@vitejs/plugin-react": "^4.0.0",
+    "tailwindcss": "^4.2.1",
+    "vite": "^6.0.0"
   }
 }

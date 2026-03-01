@@ -1,5 +1,3 @@
-import styles from "./AsyncButtonView.module.css";
-
 export default function AsyncButtonView({
   isIdle,
   isLoading,
@@ -11,32 +9,26 @@ export default function AsyncButtonView({
   onShouldFailChange,
 }) {
   const stateLabel = isIdle ? "Idle" : "Loading";
-  const stateColor = isIdle ? "#6b7280" : "#2563eb";
+  const stateColor = isIdle ? "text-gray-500" : "text-blue-600";
 
   return (
     <div>
-      {/* State inspector */}
-      <div className={styles.inspector}>
+      <div className="controls px-3 py-2.5 bg-gray-50 rounded-lg text-xs font-mono">
         <span>
-          state: <b style={{ color: stateColor }}>{stateLabel}</b>
+          state: <b className={stateColor}>{stateLabel}</b>
         </span>
         {lastResult && (
           <span>
             last:{" "}
-            <b
-              style={{
-                color: lastResult === "success" ? "#16a34a" : "#dc2626",
-              }}
-            >
+            <b className={lastResult === "success" ? "text-green-600" : "text-red-600"}>
               {lastResult}
             </b>
           </span>
         )}
       </div>
 
-      {/* Controls */}
-      <div className={styles.controls}>
-        <label className={styles.controlLabel}>
+      <div className="controls">
+        <label className="text-xs flex items-center gap-1">
           Delay
           <input
             type="range"
@@ -45,11 +37,11 @@ export default function AsyncButtonView({
             step={200}
             value={delay}
             onChange={(e) => onDelayChange(Number(e.target.value))}
-            className={styles.rangeInput}
+            className="w-20"
           />
-          <span className={styles.delayValue}>{delay}ms</span>
+          <span className="font-mono text-xs min-w-14">{delay}ms</span>
         </label>
-        <label className={styles.controlLabel}>
+        <label className="text-xs flex items-center gap-1">
           <input
             type="checkbox"
             checked={shouldFail}
@@ -59,26 +51,25 @@ export default function AsyncButtonView({
         </label>
       </div>
 
-      {/* Button */}
       <button
         onClick={onClick}
         disabled={isLoading}
-        className={`${styles.asyncButton} ${isLoading ? styles.loading : styles.idle}`}
+        className={`px-6 py-2 rounded-lg border-none text-white font-medium text-sm min-w-36 transition-all ${
+          isLoading
+            ? "bg-gray-300 cursor-not-allowed"
+            : "bg-blue-600 cursor-pointer hover:bg-blue-700"
+        }`}
       >
-        <span className={styles.buttonContent}>
-          {isLoading && <span className={styles.spinner} />}
+        <span className="inline-flex items-center gap-1.5">
+          {isLoading && (
+            <span className="inline-block w-3.5 h-3.5 border-2 border-gray-400 border-t-white rounded-full animate-spin" />
+          )}
           {isLoading ? "Working…" : "Submit"}
         </span>
       </button>
 
-      {/* Result feedback */}
       {lastResult && isIdle && (
-        <p
-          className={styles.resultText}
-          style={{
-            color: lastResult === "success" ? "#16a34a" : "#dc2626",
-          }}
-        >
+        <p className={`text-sm mt-3 ${lastResult === "success" ? "text-green-600" : "text-red-600"}`}>
           {lastResult === "success"
             ? "Action completed successfully."
             : "Action failed — button returned to Idle."}

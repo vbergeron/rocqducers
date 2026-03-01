@@ -1,20 +1,20 @@
-import styles from "./PickListView.module.css";
-
-export default function PickListView({ pickedItems, suggestionItems, onPick, onUnpick }) {
-  const canUnpick = pickedItems.length > 1;
+export default function PickListView({ picked, suggestions, pick, unpick }) {
+  const canUnpick = picked.length > 1;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.section}>
-        <h4 className={styles.pickedTitle}>
-          Picked ({pickedItems.length})
+    <div>
+      <div className="mb-4">
+        <h4 className="mt-0 mb-2 text-blue-600">
+          Picked ({picked.length})
         </h4>
-        <div className={styles.chipRow}>
-          {pickedItems.map((item, i) => (
+        <div className="chip-row">
+          {picked.map((item, i) => (
             <button
               key={item}
-              onClick={() => onUnpick(i)}
-              className={`${styles.pickedChip} ${canUnpick ? styles.canUnpick : styles.locked}`}
+              onClick={() => unpick(i)}
+              className={`chip border-blue-600 bg-blue-600 text-white ${
+                canUnpick ? "cursor-pointer opacity-100" : "cursor-not-allowed opacity-70"
+              }`}
               title={canUnpick ? "Click to remove" : "Cannot remove last item"}
             >
               {item} ✕
@@ -23,15 +23,15 @@ export default function PickListView({ pickedItems, suggestionItems, onPick, onU
         </div>
       </div>
       <div>
-        <h4 className={styles.suggestionsTitle}>
-          Suggestions ({suggestionItems.length})
+        <h4 className="mt-0 mb-2 text-gray-500">
+          Suggestions ({suggestions.length})
         </h4>
-        <div className={styles.chipRow}>
-          {suggestionItems.map((item, i) => (
+        <div className="chip-row">
+          {suggestions.map((item, i) => (
             <button
               key={item}
-              onClick={() => onPick(i)}
-              className={styles.suggestionChip}
+              onClick={() => pick(i)}
+              className="chip border-gray-200 bg-white text-gray-700 cursor-pointer hover:border-gray-400"
             >
               + {item}
             </button>

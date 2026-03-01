@@ -42,14 +42,15 @@ The inductive theorems close over `fold_left reduce events (init d rest)`, guara
 
 ## React usage
 
+The `use_safe_pick_list` hook in `Hooks.ml` wraps the reducer in React's `useReducer` and returns `{ picked, suggestions, pick, unpick }` with arrays instead of linked lists.
+
 ```jsx
-import { PickList } from "@rocqducers/lib/Rocqducers.js";
-import useSafePickList from "./hooks/useSafePickList";
+import { use_safe_pick_list } from "@rocqducers/lib/Hooks.js";
 
 const FRUITS = ["Banana", "Cherry", "Date", "Elderberry"];
 
 function MyComponent() {
-  const { picked, suggestions, pick, unpick } = useSafePickList(FRUITS, 0);
+  const { picked, suggestions, pick, unpick } = use_safe_pick_list(FRUITS, 0);
 
   return (
     <>
@@ -66,6 +67,7 @@ function MyComponent() {
 |---|---|
 | `rocqducers/theories/PickList.v` | Types, reducer, proofs |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
-| `rocqducers/lib/Rocqducers.ml` | `PickList` OCaml wrapper (list → array) |
-| `src/hooks/useSafePickList.js` | React hook |
+| `rocqducers/lib/Rocqducers.ml` | `PickList` OCaml wrapper (list → array, event constructors) |
+| `rocqducers/lib/Hooks.ml` | `use_safe_pick_list` hook |
 | `src/components/SafePickList.jsx` | Demo component |
+| `src/components/PickListView.jsx` | Reusable view (used standalone and inside history wrappers) |

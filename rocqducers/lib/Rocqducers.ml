@@ -1,8 +1,8 @@
 module PickList = struct
   let reduce = Extracted.PickList.reduce
 
-  let pick = Extracted.PickList.do_pick
-  let unpick = Extracted.PickList.do_unpick
+  let pick i = Extracted.PickList.DoPick i
+  let unpick i = Extracted.PickList.DoUnpick i
 
   let init default rest =
     Extracted.PickList.init default (Array.to_list rest)

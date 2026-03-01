@@ -46,40 +46,7 @@ A pick/unpick list where items move between "picked" and "suggestions". The redu
 | Non-empty picked | `picked s <> [] -> picked (reducer s e) <> []` |
 | Total preserved | `card(picked s) + card(suggestions s) = card(picked (reducer s e)) + card(suggestions (reducer s e))` |
 
-### 2. SafeLoader — Verified network loader with cache, retry, and timeout
-
-→ [`docs/loader.md`](./docs/loader.md)
-
-A network data loader that handles loading, errors, retries, timeouts, and race conditions. The pure reducer is defined in `Loader.v`; side effects (fetch, timers) are handled by the React component.
-
-**State:** `{ phase; cache; next_id; retries; max_retries }`
-**Events:** `Fetch` | `GotResponse rid data` | `GotError rid` | `TimedOut rid` | `DoRetry`
-
-```
-     Fetch          GotResponse         Fetch
-Idle ────── Loading ──────────── Loaded ─────── Loading
-               │                                   │
-               │ GotError / TimedOut               │
-               ▼                                   ▼
-           Errored ──────────────── Loading    Errored
-               │      DoRetry                      │
-               │   (retries < max)                 │
-               └── stays Errored ──────────────────┘
-                   (retries >= max)
-```
-
-**Proved invariants:**
-
-| Property | Statement | Addresses |
-|----------|-----------|-----------|
-| Loaded implies data | `phase (step s e) = Loaded -> exists d, cache (step s e) = Some d` | — |
-| Error preserves cache | `phase (step s e) = Errored -> cache (step s e) = cache s` | Inconsistent cache |
-| Stale events ignored | `phase s = Loading crid -> rid <> crid -> step s (GotResponse rid d) = s` | Race conditions |
-| Retry preserves cache | `cache (step s DoRetry) = cache s` | Cache invalidation |
-| Bounded retries | `retries s >= max_retries s -> step s DoRetry = s` | Infinite retry |
-| Timeout resolves loading | `phase s = Loading rid -> phase (step s (TimedOut rid)) = Errored` | Stuck spinner |
-
-### 3. SafeAsyncButton — Verified async button
+### 2. SafeAsyncButton — Verified async button
 
 → [`docs/async-button.md`](./docs/async-button.md)
 
@@ -94,7 +61,7 @@ A button that tracks whether an async operation is in-flight. Clicks while loadi
 |----------|-----------|
 | Click ignored while loading | `reducer Loading Click = Loading` |
 
-### 4. SafeUndoTree — Verified branching history tree
+### 3. TreeHistoryWrapper — Verified branching history tree
 
 → [`docs/undo-tree.md`](./docs/undo-tree.md)
 
@@ -115,7 +82,7 @@ A navigable history tree with `Leaf`, `Link`, and `Node` constructors, driven by
 | Failed step | `step Failed e = Failed` for any event `e` |
 | Predicate correctness | `can_go_up (At f k) = true ↔ k ≠ Top` (and analogues for left/right/link) |
 
-### 5. SafeUndoList — Verified linear undo/redo wrapper
+### 4. LinearHistoryWrapper — Verified linear undo/redo wrapper
 
 → [`docs/undo-list.md`](./docs/undo-list.md)
 
@@ -151,22 +118,25 @@ s₀ ──────── s₁ ──────── s₂ ─────
 rocqducers/
 ├── docs/                         # Per-component documentation
 │   ├── pick-list.md
-│   ├── loader.md
 │   ├── async-button.md
 │   ├── undo-tree.md
 │   └── undo-list.md
 ├── src/                          # React frontend
 │   ├── main.jsx                  #   Entry point
-│   ├── App.jsx                   #   Application shell
-│   ├── hooks/                    #   React hooks (one per component)
-│   └── components/               #   View + container components
+│   ├── App.jsx                   #   Tab-based application shell
+│   └── components/               #   View + wrapper components
+│       ├── SafePickList.jsx
+│       ├── PickListView.jsx
+│       ├── SafeAsyncButton.jsx
+│       ├── AsyncButtonView.jsx
+│       ├── LinearHistoryWrapper.jsx
+│       └── TreeHistoryWrapper.jsx
 ├── vite.config.js                # Vite config with Melange aliases
 ├── package.json                  # JS dependencies and scripts
 └── rocqducers/                   # Dune project (Rocq + Melange)
     ├── dune-project
     ├── theories/
     │   ├── PickList.v            #   Pick list: state, events, reducer, proofs
-    │   ├── Loader.v              #   Network loader: state, events, step, proofs
     │   ├── AsyncButton.v         #   Async button: state machine and proof
     │   ├── UndoTree.v            #   Branching history tree: zipper, inner reducer, proofs
     │   ├── UndoList.v            #   Linear undo/redo wrapper: state, events, step, proofs
@@ -176,6 +146,7 @@ rocqducers/
     │   └── dune
     ├── lib/
     │   ├── Rocqducers.ml         #   Melange wrapper (array interop, constructors)
+    │   ├── Hooks.ml              #   React hooks (useReducer bindings, tree visualization)
     │   └── dune
     └── emit/
         └── dune                  #   Melange JS emit target

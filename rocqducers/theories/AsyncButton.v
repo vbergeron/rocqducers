@@ -1,6 +1,3 @@
-From Stdlib Require Import List.
-
-Import ListNotations.
 
 Inductive state :=
 | Idle

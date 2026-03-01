@@ -44,17 +44,19 @@ The theorem is small but the point is architectural: the UI can freely call `dis
 
 ## React usage
 
+The `use_safe_async_button` hook in `Hooks.ml` wraps the reducer in React's `useReducer` and returns `{ isIdle, isLoading, dispatch }`.
+
 ```jsx
+import { use_safe_async_button } from "@rocqducers/lib/Hooks.js";
 import { AsyncButton } from "@rocqducers/lib/Rocqducers.js";
-import useSafeAsyncButton from "./hooks/useSafeAsyncButton";
 
 function MyComponent({ onSubmit }) {
-  const { isIdle, isLoading, click, succeed, fail } = useSafeAsyncButton();
+  const { isIdle, isLoading, dispatch } = use_safe_async_button();
 
   const handleClick = async () => {
-    click();
-    try   { await onSubmit(); succeed(); }
-    catch { fail(); }
+    dispatch(AsyncButton.click);
+    try   { await onSubmit(); dispatch(AsyncButton.success); }
+    catch { dispatch(AsyncButton.failure); }
   };
 
   return (
@@ -74,5 +76,6 @@ The `disabled` attribute is a UX convenience; correctness does not depend on it 
 | `rocqducers/theories/AsyncButton.v` | State machine and proof |
 | `rocqducers/extraction/Extract.v` | Extraction directives |
 | `rocqducers/lib/Rocqducers.ml` | `AsyncButton` OCaml wrapper |
-| `src/hooks/useSafeAsyncButton.js` | React hook |
+| `rocqducers/lib/Hooks.ml` | `use_safe_async_button` hook |
 | `src/components/SafeAsyncButton.jsx` | Demo component |
+| `src/components/AsyncButtonView.jsx` | View component |

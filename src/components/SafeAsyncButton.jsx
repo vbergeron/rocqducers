@@ -1,6 +1,5 @@
 import { useState, useCallback } from "react";
 import { use_safe_async_button } from "@rocqducers/lib/Hooks.js";
-import { AsyncButton } from "@rocqducers/lib/Rocqducers.js";
 import AsyncButtonView from "./AsyncButtonView";
 
 function simulatedAction({ delay, shouldFail }) {
@@ -21,23 +20,23 @@ export default function SafeAsyncButton() {
     [delay, shouldFail],
   );
 
-  const { isIdle, isLoading, dispatch } = use_safe_async_button();
+  const { isIdle, isLoading, click, succeed, fail } = use_safe_async_button();
   const [lastResult, setLastResult] = useState(null);
 
   const handleClick = useCallback(async () => {
     setLastResult(null);
-    dispatch(AsyncButton.click);
+    click();
     if (isIdle) {
       try {
         await action();
-        dispatch(AsyncButton.success);
+        succeed();
         setLastResult("success");
       } catch {
-        dispatch(AsyncButton.failure);
+        fail();
         setLastResult("failure");
       }
     }
-  }, [action, isIdle, dispatch]);
+  }, [action, isIdle, click, succeed, fail]);
 
   return (
     <AsyncButtonView

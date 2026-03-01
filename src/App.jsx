@@ -1,5 +1,4 @@
 import SafePickList from "./components/SafePickList";
-import SafeLoader from "./components/SafeLoader";
 import SafeAsyncButton from "./components/SafeAsyncButton";
 import LinearHistoryWrapper from "./components/LinearHistoryWrapper";
 import TreeHistoryWrapper from "./components/TreeHistoryWrapper";
@@ -32,14 +31,6 @@ export default function App() {
           Invariants: at least one fruit is always picked, and the total count never changes.
         </p>
         <SafePickList items={FRUITS} defaultIndex={0} />
-      </div>
-
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Network loader</h3>
-        <p className={styles.cardDescription}>
-          Invariants: loaded implies data present, error preserves cache, stale responses ignored, retry bounded.
-        </p>
-        <SafeLoader />
       </div>
 
       <div className={styles.card}>

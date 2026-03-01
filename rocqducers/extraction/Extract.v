@@ -1,7 +1,6 @@
 From Stdlib Require Extraction.
 From Stdlib Require Import PeanoNat.
 From Rocqducers Require Import PickList.
-From Rocqducers Require Loader.
 From Rocqducers Require AsyncButton.
 From Rocqducers Require UndoTree.
 From Rocqducers Require UndoList.
@@ -26,12 +25,6 @@ Separate Extraction
   PickList.do_unpick
   PickList.picked
   PickList.suggestions
-  Loader.step Loader.init_state
-  Loader.mk_fetch Loader.mk_got_response Loader.mk_got_error
-  Loader.mk_timed_out Loader.mk_do_retry
-  Loader.phase Loader.cache Loader.next_id Loader.retries
-  Loader.is_idle Loader.is_loading Loader.loading_rid
-  Loader.is_loaded Loader.is_errored
   AsyncButton.reducer
   UndoTree.step
   UndoTree.init
